@@ -44,3 +44,7 @@ def test_rank(client):
             "url": "https://reddit.com/r/PRCExample/comments/1f33ead/example_to_insert",
         }
     ]
+
+
+if __name__ == "__main__":
+    pytest.main([__file__])
