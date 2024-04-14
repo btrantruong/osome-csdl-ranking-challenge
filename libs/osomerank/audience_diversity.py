@@ -62,12 +62,23 @@ def process_text(text):
     return text
 
 
-def audience_diversity(feed_post, sm_type):
+def audience_diversity(feed_post, platform):
+    """
+    Calculates the audience diversity score for a given social media post.
+
+    Parameters:
+    feed_post (json object): the social media post. It should contain keys like 'text', 'expanded_url' etc.
+    platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
+
+    Returns:
+    audience_diversity_val (float): The calculated audience diversity score for `feed_post`
+    """
+
     url_available = ""
 
     audience_diversity_val = -1000
 
-    if sm_type == "twitter":
+    if platform == "twitter":
         if feed_post["expanded_url"]:
             url_available = feed_post["expanded_url"]
 
@@ -85,7 +96,7 @@ def audience_diversity(feed_post, sm_type):
 
     if audience_diversity_val == -1000:
         sm_text = ""
-        if sm_type == "reddit":
+        if platform == "reddit":
             if "title" in feed_post.keys() and "text" in feed_post.keys():
                 sm_text = feed_post["title"] + ". " + feed_post["text"]
             elif "title" in feed_post.keys():
