@@ -25,7 +25,7 @@ audience_diversity_domains = pd_audience_diversity_URLs['private_domain'].unique
 BERTopic_model_loaded = BERTopic.load()
 
 topic_diversity = {}
-with open(os.path.join(os.path.dirname(__file__), 'models', 'BERTopic_diversity.json')) as ff:
+with open(os.path.join(os.path.dirname(__file__), 'models', 'AD', 'BERTopic_diversity.json')) as ff:
     topic_diversity = json.load(ff)
     
 mean_topic_diversity = 0.17

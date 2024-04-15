@@ -1,13 +1,14 @@
 import pickle
 from sentence_transformers import SentenceTransformer
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, TextClassificationPipeline
+import os 
 
 # import gaussian NB model for HaR
-with open('/models/gaussian_nb.pkl', 'rb') as f:
+with open(os.path.join(os.path.dirname(__file__), 'models', 'ER', 'gaussian_nb.pkl'), 'rb') as f:
     gnb = pickle.load(f)
 
 # import linear regression model for AR
-with open('/models/linear_regression.pkl', 'rb') as f:
+with open(os.path.join(os.path.dirname(__file__), 'models', 'ER', 'linear_regression.pkl'), 'rb') as f:
     lr = pickle.load(f)
 
 # load the sentence-BERT model
@@ -50,7 +51,7 @@ def har_prediction(feed_post, platform):
 
     else: # else, check whether the post will attract toxic comments
         emb = qa_model.encode(text)
-        prob_of_nar = gnb.predict_proba([emb])[0][1]
+        prob_of_har = gnb.predict_proba([emb])[0][1]
         if prob_of_har > .8:
             return 1
         else:
