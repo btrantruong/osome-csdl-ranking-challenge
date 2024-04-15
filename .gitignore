@@ -175,3 +175,5 @@ Temporary Items
 
 examples/
 */*_debug.py
+libs/osomerank/data/
+test/

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Apr  3 10:34:34 2024
+Created on Sat Apr 13 16:06:26 2024
 
 @author: saumya
 """
 
-from sentence_transformers import SentenceTransformer
+from bertopic import BERTopic
 import pandas as pd
 import re
 import requests
@@ -14,113 +14,94 @@ import nltk
 import numpy as np
 import json
 
-audience_diversity_file = "data/audience_diversity_2022-2023_visitor_level.csv"
-pd_audience_diversity_URLs = pd.read_csv(
-    audience_diversity_file
-)  # Need to remove domains whih are platform corref from NewsGuard data
-pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
-    pd_audience_diversity_URLs["n_visitors"] >= 10
-]
-audience_diversity_domains = (
-    pd_audience_diversity_URLs["private_domain"].unique().tolist()
-)
+import os
 
-model = SentenceTransformer(
-    "sentence-transformers/average_word_embeddings_glove.6B.300d"
-)
+audience_diversity_file = os.path.join(os.path.dirname(__file__), 'data', 'audience_diversity_2022-2023_visitor_level.csv')
+pd_audience_diversity_URLs = pd.read_csv(audience_diversity_file)#Need to remove domains whih are platform corref from NewsGuard data
+pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[pd_audience_diversity_URLs['n_visitors'] >= 10]
+audience_diversity_domains = pd_audience_diversity_URLs['private_domain'].unique().tolist()
 
-centroids = {}
-radius = {}
-audience_diversity_text = {}
+# BERTopic_model_loaded = BERTopic.load(os.path.join(os.path.dirname(__file__), 'models'))
+BERTopic_model_loaded = BERTopic.load()
 
-with open("models/clustering_centroids.json") as ff:
-    centroids = json.load(ff)
-
-with open("models/clustering_radius.json") as ff:
-    radius = json.load(ff)
-
-with open("models/clustering_audience_diversity.json") as ff:
-    audience_diversity_text = json.load(ff)
-
+topic_diversity = {}
+with open(os.path.join(os.path.dirname(__file__), 'models', 'BERTopic_diversity.json')) as ff:
+    topic_diversity = json.load(ff)
+    
+mean_topic_diversity = 0.17
 
 def URL_from_text(myString):
     if not re.search("(?P<url>https?://[^\s]+)", myString):
         return "NA"
     return re.search("(?P<url>https?://[^\s]+)", myString).group("url")
 
-
 def process_URL(url):
     try:
-        r = requests.head(url, allow_redirects=True, timeout=10)
+        r = requests.head(url, allow_redirects=True,timeout=10)
         return r.url
     except Exception:
         return url
 
+def remove_urls(text, replacement_text=""):
+    # Define a regex pattern to match URLs
+    url_pattern = re.compile(r'https?://\S+|www\.\S+')
+ 
+    # Use the sub() method to replace URLs with the specified replacement text
+    text_without_urls = url_pattern.sub(replacement_text, text)
+ 
+    return text_without_urls
 
-# Filtering text: remove special characters, alphanumeric, return None if text doesn't meet some criterial like just one word or something
+#Filtering text: remove special characters, alphanumeric, return None if text doesn't meet some criterial like just one word or something
 def process_text(text):
-    return text
+    text_urls_removed = remove_urls(text)
+    if len(text.strip().split(" ")) <= 3:
+        return "NA"
+    return text_urls_removed
 
-
-def audience_diversity(feed_post, platform):
-    """
-    Calculates the audience diversity score for a given social media post.
-
-    Parameters:
-    feed_post (json object): the social media post. It should contain keys like 'text', 'expanded_url' etc.
-    platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
-
-    Returns:
-    audience_diversity_val (float): The calculated audience diversity score for `feed_post`
-    """
-
-    url_available = ""
-
+def audience_diversity(feed_post,sm_type):
+    url_available = ''
+    
     audience_diversity_val = -1000
-
-    if platform == "twitter":
-        if feed_post["expanded_url"]:
-            url_available = feed_post["expanded_url"]
-
-    else:
-        if URL_from_text(feed_post["text"]) != "NA":
-            url_available = URL_from_text(feed_post["text"])
-
-    if url_available:
-        url_available = process_URL(url_available)
-        domain = ".".join(url_available.split("/")[2].split(".")[-2:])
-        if domain in audience_diversity_domains:
-            audience_diversity_val = pd_audience_diversity_URLs.loc[
-                pd_audience_diversity_URLs["private_domain"] == domain
-            ]["visitor_var"].values[0]
-
-    if audience_diversity_val == -1000:
-        sm_text = ""
-        if platform == "reddit":
-            if "title" in feed_post.keys() and "text" in feed_post.keys():
-                sm_text = feed_post["title"] + ". " + feed_post["text"]
-            elif "title" in feed_post.keys():
-                sm_text = feed_post["title"]
-            else:
-                sm_text = feed_post["text"]
+    
+    try:
+        if sm_type == 'twitter':
+            if feed_post["expanded_url"]:
+                url_available = feed_post["expanded_url"]
+        
         else:
-            sm_text = feed_post["text"]
-        if process_text(sm_text):
-            sm_text = process_text(sm_text)
-            embeddings = model.encode(sm_text)
-            min_distance = 10000
-            selected_cluster = -1
-            for cluster in centroids.keys():
-                centroid_numpy = np.array(centroids[cluster])
-                distance = nltk.cluster.util.cosine_distance(embeddings, centroid_numpy)
-                if distance < min_distance:
-                    min_distance = distance
-                    selected_cluster = cluster
-            if min_distance < radius[selected_cluster]:
-                audience_diversity_val = audience_diversity_text[selected_cluster]
-
+            if URL_from_text(feed_post["text"]) != "NA":
+                url_available = URL_from_text(feed_post["text"])
+        
+        if url_available:
+            url_available = process_URL(url_available)
+            domain = ".".join(url_available.split("/")[2].split(".")[-2:])
+            if domain in audience_diversity_domains:
+                audience_diversity_val = pd_audience_diversity_URLs.loc[pd_audience_diversity_URLs['private_domain'] == domain]['visitor_var'].values[0]
+        
+        if audience_diversity_val == -1000:
+            sm_text = ''
+            if sm_type == 'reddit':
+                if 'title' in feed_post.keys() and 'text' in feed_post.keys():
+                    sm_text = feed_post['title'] + ". " + feed_post["text"]
+                elif 'title' in feed_post.keys():
+                    sm_text = feed_post['title']
+                else:
+                    sm_text = feed_post['text']
+            else:
+                sm_text = feed_post['text']
+            if process_text(sm_text) != "NA":
+                sm_text = process_text(sm_text)
+                topic = BERTopic_model_loaded.transform([sm_text])[0][0]
+                if int(topic) != -1:
+                    audience_diversity_val = topic_diversity[int(topic)]
+    except Exception as e:
+        print(e)
+        return mean_topic_diversity
+    
+    if audience_diversity_val == -1000:
+        audience_diversity_val = mean_topic_diversity
+    
     return audience_diversity_val
-
 
 # if __name__ == "__main__":
 #     sample_post_twitter = {}
@@ -128,13 +109,13 @@ def audience_diversity(feed_post, platform):
 #         sample_post_twitter = json.load(ff)
 #     print("Audience Diversity for Twitter : ")
 #     print(audience_diversity(sample_post_twitter, "twitter"))
-
+    
 #     sample_post_facebook = {}
 #     with open('sample_posts/sample_post_facebook.json') as ff:
 #         sample_post_facebook = json.load(ff)
 #     print("Audience Diversity for Facebook : ")
 #     print(audience_diversity(sample_post_facebook, "facebook"))
-
+    
 #     sample_post_reddit = {}
 #     with open('sample_posts/sample_post_reddit.json') as ff:
 #         sample_post_reddit = json.load(ff)
