@@ -13,7 +13,8 @@ model_path = 'unitary/toxic-bert'
 tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_path,
                                           cache_dir=cache_dir)
 model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path=model_path,
-                                                           cache_dir=cache_dir)
+                                                           #cache_dir=cache_dir,
+                                                           )
 toxicity_model =  TextClassificationPipeline(model=model,
                                              tokenizer=tokenizer,
                                              max_length=512,
