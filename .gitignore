@@ -177,3 +177,4 @@ examples/
 */*_debug.py
 libs/osomerank/data/
 test/
+sample_data/*_json/

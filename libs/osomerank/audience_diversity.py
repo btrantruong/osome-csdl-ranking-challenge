@@ -10,8 +10,6 @@ from bertopic import BERTopic
 import pandas as pd
 import re
 import requests
-import nltk
-import numpy as np
 import json
 
 import os
@@ -21,8 +19,7 @@ pd_audience_diversity_URLs = pd.read_csv(audience_diversity_file)#Need to remove
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[pd_audience_diversity_URLs['n_visitors'] >= 10]
 audience_diversity_domains = pd_audience_diversity_URLs['private_domain'].unique().tolist()
 
-# BERTopic_model_loaded = BERTopic.load(os.path.join(os.path.dirname(__file__), 'models'))
-BERTopic_model_loaded = BERTopic.load()
+BERTopic_model_loaded = BERTopic.load(os.path.join(os.path.dirname(__file__), 'models', 'AD'))
 
 topic_diversity = {}
 with open(os.path.join(os.path.dirname(__file__), 'models', 'AD', 'BERTopic_diversity.json')) as ff:
@@ -102,22 +99,3 @@ def audience_diversity(feed_post,sm_type):
         audience_diversity_val = mean_topic_diversity
     
     return audience_diversity_val
-
-# if __name__ == "__main__":
-#     sample_post_twitter = {}
-#     with open('sample_posts/sample_post_twitter.json') as ff:
-#         sample_post_twitter = json.load(ff)
-#     print("Audience Diversity for Twitter : ")
-#     print(audience_diversity(sample_post_twitter, "twitter"))
-    
-#     sample_post_facebook = {}
-#     with open('sample_posts/sample_post_facebook.json') as ff:
-#         sample_post_facebook = json.load(ff)
-#     print("Audience Diversity for Facebook : ")
-#     print(audience_diversity(sample_post_facebook, "facebook"))
-    
-#     sample_post_reddit = {}
-#     with open('sample_posts/sample_post_reddit.json') as ff:
-#         sample_post_reddit = json.load(ff)
-#     print("Audience Diversity for Reddit : ")
-#     print(audience_diversity(sample_post_reddit, "reddit"))

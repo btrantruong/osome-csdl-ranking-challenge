@@ -47,10 +47,14 @@ def har_prediction(feed_post, platform):
     Returns:
     HaR score (int): The predicted HaR class for `feed_post, {0,1}
     """
-    text = feed_post.get('text')
+    try:
+        text = feed_post.get('text')
 
-    emb = qa_model.encode(text)
-    prob_of_har = gnb.predict_proba([emb])[0][1]
+        emb = qa_model.encode(text)
+        prob_of_har = gnb.predict_proba([emb])[0][1]
+    except Exception as e:
+        print(e)
+        return 0 
     if prob_of_har > .8:
         return 1
     else:
@@ -68,12 +72,26 @@ def ar_prediction(feed_post, platform):
     Returns:
     AR score (int): The AR score for `feed_post` in (0,1)
     """
-    text = feed_post.get('text')
-    emb = qa_model.encode(text)
-    
-    return lr.predict([emb])[0]
+    try:
+        text = feed_post.get('text')
+        emb = qa_model.encode(text)
+        ar_score = lr.predict([emb])[0]
+    except Exception as e:
+        print(e)
+        return 0.5 
+    return ar_score
 
 def toxicity_score(feed_post, platform):
-    text = feed_post.get('text')
-    return toxicity_model(text)
+    mean_toxicity = 0.3
+
+    try:
+        text = feed_post.get('text')
+        # model returns a list of toxic score, e.g: [{'label': 'toxic', 'score': 0.0005410030717030168}]
+        results , = toxicity_model(text)
+        toxicity = results['score']
+    except Exception as e:
+        print(e)
+        return mean_toxicity 
+    
+    return toxicity
 

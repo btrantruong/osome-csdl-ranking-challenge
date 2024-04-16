@@ -304,6 +304,7 @@ def data_puller(platform, x, seed_no, username):
     json_out_path = os.path.join(json_dir, f"sample.json")
     with open(json_out_path, "w") as f:
         json.dump(static_json, f)
+    print(f"\nSaved sample data in {json_dir}!")
 
 
 if __name__ == "__main__":
