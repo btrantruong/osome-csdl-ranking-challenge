@@ -25,7 +25,11 @@ python3 app/ranking_server_test.py
 
 ## Collect data from personal account using the extension: 
 
-- To install the chrome extension: unzip `rc-extension-0.3.0-20240514.zip` and install according to directions in `rc-extension/READNE.md` 
+- To install the chrome extension: unzip `rc-extension-0.3.0-20240514.zip` (Shared in PRC Google group or in our Slack channel Gdrive -- Please don't share this extension/don't commit it to this public repo!!)
+- Replace `manifest.json` and `service_worker.js` with the 2 files in `rc-extension-update`
+- Install the extension according to directions in `rc-extension/READNE.md` 
+- Run the server following step 3 above. 
+- Now log in to your X/Facebook/Reddit account and scroll. Your account timeline data, plus the ranked posts will be saved in `extension_data`
 
 ## Develop ranking models  
 
