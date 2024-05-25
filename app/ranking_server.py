@@ -8,7 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Change the file path
-JSON_OUTDIR = "/Users/baott/osome-server-updated/rc-extension/data"
+JSON_OUTDIR = "extension_data"
 
 
 @app.route("/")
@@ -69,7 +69,7 @@ def rank():
             item, platform
         )  # first run toxicity detection
 
-        if toxicity[0]["score"] > 0.8:  # check the toxicity score
+        if toxicity > 0.8:  # check the toxicity score
             processed_item = {
                 "id": id,
                 "text": text,
@@ -108,7 +108,7 @@ def rank():
     # concat the two lists, prioritizing non-HaR posts
     ranked_results = non_har_posts + har_posts
     ranked_ids = [content.get("id", None) for content in ranked_results]
-    result = {"ranked_ids": ranked_ids}
+    result = {"ranked_post_ids": ranked_ids}
 
     # write the json file
     rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
@@ -139,15 +139,13 @@ def save_to_json(post_content, fpath):
     -----------
     None
     """
-    existing_data = []
-    # Check if the JSON file exists
-    if os.path.exists(fpath):
-        with open(fpath, "r") as file:
-            existing_data = json.load(file)
+    file_dir = os.path.dirname(fpath)
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+
     # write the json to file.
     with open(fpath, "w") as file:
-        existing_data.append(post_content)
-        json.dump(existing_data, file)
+        json.dump(post_content, file)
 
 
 if __name__ == "__main__":
