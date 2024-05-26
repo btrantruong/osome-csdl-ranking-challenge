@@ -29,7 +29,24 @@ python3 app/ranking_server_test.py
 - Replace `manifest.json` and `service_worker.js` with the 2 files in `rc-extension-update`
 - Install the extension according to directions in `rc-extension/READNE.md` 
 - Run the server following step 3 above. 
-- Now log in to your X/Facebook/Reddit account and scroll. Your account timeline data, plus the ranked posts will be saved in `extension_data`
+- Now log in to your X/Facebook/Reddit account and scroll. Your account timeline data, plus the ranked posts will be saved in `data/extension_data`
+
+### Calculating "dose" 
+
+When you run the server and scroll, the dose calculated using Rank-biased Overlap (RBO) will be calculated for each payload, printed to the terminal  saved in `data/extension_data/<platform>_ranked*.json` files. Look something like this:
+
+```
+{
+    "ranked_post_ids": [
+        "tweet-1794363035253194910",
+        "tweet-1794413716357972268",
+        "tweet-1794376515477807452",
+        "tweet-1794027648257020292",
+        "tweet-1793930355617259811"
+    ],
+    "rbo": 0.4820609478723649
+}
+``` 
 
 ## Develop ranking models  
 
@@ -38,9 +55,9 @@ Since we now have the extension, sample data collected using the previous sectio
 ### Sample data 
 
 Run this code to generate sample data: 
-`python3 sample_data/data_pull.py -p <platform> --numposts <number-of-items> --randomseed 999` 
+`python3 data/sample_data/data_pull.py -p <platform> --numposts <number-of-items> --randomseed 999` 
 
 where platform can take 3 values: twitter, facebook, reddit 
 
-This will print the json object of a timeline to stdout. It will also save the object to a .json file in `sample_data/<platform>_data` for you to inspect.
+This will print the json object of a timeline to stdout. It will also save the object to a .json file in `data/sample_data/<platform>_data` for you to inspect.
 

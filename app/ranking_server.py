@@ -1,14 +1,15 @@
-import nltk
 from flask import Flask, jsonify, request, json
 import os
 from flask_cors import CORS
 from osomerank import audience_diversity, elicited_response
+import rbo
+import numpy as np
 
 app = Flask(__name__)
 CORS(app)
 
 # Change the file path
-JSON_OUTDIR = "extension_data"
+JSON_OUTDIR = "data/extension_data"
 
 
 @app.route("/")
@@ -48,7 +49,9 @@ def rank():
     toxic_posts = []  # these posts get removed
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
-    # print("Received payload:", request.get_json())
+
+    print("** Received POST request.. Begin processing... ** ")
+
     post_data = request.get_json("post_content").get(
         "post_content"
     )  # receive the data coming
@@ -60,6 +63,7 @@ def rank():
     session_id = post_sessions["current_time"]
     unranked_fpath = os.path.join(JSON_OUTDIR, f"{platform}_raw__{session_id}.json")
     save_to_json(post_data, unranked_fpath)
+    print(f"** Saved unranked json file to {unranked_fpath} **")
 
     for item in post_items:
         id = item["id"]
@@ -108,25 +112,38 @@ def rank():
     # concat the two lists, prioritizing non-HaR posts
     ranked_results = non_har_posts + har_posts
     ranked_ids = [content.get("id", None) for content in ranked_results]
-    result = {"ranked_post_ids": ranked_ids}
+    result = {"ranked_ids": ranked_ids}
 
     # write the json file
+    rbo = calculate_rbo(post_data, ranked_ids)
     rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
-    save_to_json(result, rank_fpath)
+    save_to_json(
+        {
+            "rbo": rbo,
+            "ranked_post_ids": ranked_ids,
+        },
+        rank_fpath,
+    )
+    print(
+        f"** Rank-biased Overlap (RBO): {np.round(rbo, 3)}. Ranked json data saved to {rank_fpath} **"
+    )
 
     return jsonify(result)
 
 
-def get_today():
-    from datetime import datetime
+def calculate_rbo(post_data, ranked_hashs):
+    """
+    Calculate the RBO score for a payload.
 
-    # Get current date and time
-    now = datetime.now()
-
-    # Format date and time
-    formatted_time = now.strftime("%m%d%Y_%H%M%S")
-
-    return formatted_time
+    Args:
+        post_data (json object): raw json payload as given by the extension (unranked)
+        ranked_hashs (list of str): list of hashed id of posts, in the ranked order.
+    """
+    raw_hashs = [item["id"] for item in post_data["items"]]
+    raw_id_map = {hash_id: idx for idx, hash_id in enumerate(raw_hashs)}
+    raw_ids = list(range(len(raw_hashs)))
+    ranked_ids = [raw_id_map[hash_id] for hash_id in ranked_hashs]
+    return rbo.RankingSimilarity(raw_ids, ranked_ids).rbo()
 
 
 def save_to_json(post_content, fpath):
