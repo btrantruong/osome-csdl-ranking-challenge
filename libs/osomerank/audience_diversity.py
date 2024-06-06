@@ -3,7 +3,11 @@
 """
 Created on Sat Apr 13 16:06:26 2024
 
-@author: saumya
+@author: Saumya, modified by Bao
+
+Functions to calculate the audience diversity of a single or a list of posts. The model is trained on the audience diversity of the URLs in the NewsGuard dataset.
+Inputs: 
+    - 
 """
 
 from bertopic import BERTopic
@@ -14,12 +18,16 @@ import json
 import traceback
 
 import os
+import configparser
 
-audience_diversity_file = os.path.join(
-    os.path.dirname(__file__), "data", "audience_diversity_2022-2023_visitor_level.csv"
-)
+libs_path = os.path.dirname(__file__)
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+
 # Need to remove domains whih are platform corref from NewsGuard data
-pd_audience_diversity_URLs = pd.read_csv(audience_diversity_file)
+pd_audience_diversity_URLs = pd.read_csv(
+    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
+)
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
     pd_audience_diversity_URLs["n_visitors"] >= 10
 ]
@@ -28,14 +36,12 @@ audience_diversity_domains = (
 )
 
 BERTopic_model_loaded = BERTopic.load(
-    os.path.join(os.path.dirname(__file__), "models", "AD")
+    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_BERTtopic"))
 )
 # BERTopic_model_loaded = BERTopic.load()
 
 topic_diversity = {}
-with open(
-    os.path.join(os.path.dirname(__file__), "models", "AD", "BERTopic_diversity.json")
-) as ff:
+with open(os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json"))) as ff:
     topic_diversity = json.load(ff)
 
 mean_topic_diversity = 0.17

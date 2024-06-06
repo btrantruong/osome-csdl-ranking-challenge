@@ -11,6 +11,12 @@ import numpy as np
 import json
 import re
 from bertopic import BERTopic
+import os
+import configparser
+
+libs_path = os.path.dirname(__file__)
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
 def remove_urls(text, replacement_text=""):
     # Define a regex pattern to match URLs
@@ -27,7 +33,7 @@ def process_text(text):
         return "NA"
     return text_urls_removed
 
-data = pd.read_csv("data/rockwell_engagement_data_with_partisanship_just_text.csv")
+data = pd.read_csv(os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "engagement_data_rockwell")))
 if 'Unnamed: 0' in data.columns:
     data = data.drop(columns=["Unnamed: 0"])
 data = data.dropna().reset_index(drop=True)
@@ -66,7 +72,7 @@ for topic in unique_topics:
     partisanship_values = data_train.loc[data_train['topic'] == topic]['partisanship_numeric'].values.tolist()
     topic_diversity[int(topic)] = np.var(partisanship_values)
 
-with open('models/BERTopic_diversity.json','w') as outfile:
+with open(os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")),'w') as outfile:
     json.dump(topic_diversity,outfile)
 
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"

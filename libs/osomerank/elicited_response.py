@@ -1,39 +1,86 @@
-import pickle
-from sentence_transformers import SentenceTransformer
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, TextClassificationPipeline
-import os 
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue June 4 2024
 
-# import gaussian NB model for HaR
-with open(os.path.join(os.path.dirname(__file__), 'models', 'AR', 'gaussian_nb.pkl'), 'rb') as f:
-    gnb = pickle.load(f)
+@author: Ozgur (modified by Bao)
+"""
 
-# import linear regression model for AR
-with open(os.path.join(os.path.dirname(__file__), 'models', 'AR', 'linear_regression.pkl'), 'rb') as f:
-    lr = pickle.load(f)
+from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+    TextClassificationPipeline,
+)
+import re
+import configparser
+import os
 
-# load the sentence-BERT model
-cache_dir = "..."  # space to save the model
-model_name = "multi-qa-mpnet-base-dot-v1"  # specify the model name
+libs_path = os.path.dirname(__file__)
+config = configparser.ConfigParser()
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-qa_model = SentenceTransformer(model_name_or_path = "multi-qa-mpnet-base-dot-v1", 
-                               #cache_folder = cache_dir,
-                               #device='cuda', # if we can use GPU
-                               )
 
-# load the toxicity model
-model_path = 'unitary/toxic-bert'
-tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=model_path,
-                                          #cache_dir=cache_dir,
-                                          )
-model = AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path=model_path,
-                                                           #cache_dir=cache_dir,
-                                                           )
-toxicity_model =  TextClassificationPipeline(model=model,
-                                             tokenizer=tokenizer,
-                                             max_length=512,
-                                             truncation=True,
-                                             #device=0 # if we can use GPU
-                                             )
+model_names = ["toxicity_trigger", "attracted_sentiment"]
+platforms = ["twitter", "reddit"]
+
+
+# load models
+MODELS = dict()
+for model_name in model_names:
+    for platform in platforms:
+        print(f"Loading {model_name}_{platform} model..")
+        model_path = os.path.join(libs_path, config.get("ELICITED_RESPONSE", f"{model_name}_{platform}"))
+        tokenizer = AutoTokenizer.from_pretrained(
+            pretrained_model_name_or_path=model_path
+        )
+        model = AutoModelForSequenceClassification.from_pretrained(
+            pretrained_model_name_or_path=model_path,
+            num_labels=1,
+            ignore_mismatched_sizes=True,
+        )
+        pipeline = TextClassificationPipeline(
+            model=model,
+            tokenizer=tokenizer,
+            max_length=512,
+            truncation=True,
+            batch_size=8,
+            # top_k=None,
+            device="cuda",  # switch to 0 when using CPU
+        )
+        MODELS[f"{model_name}_{platform}"]["pipeline"] = pipeline
+        print(f"Loaded {model_name}_{platform} model.")
+
+
+def clean_text(text):
+
+    text = re.sub(r"(?:\@|https?\://)\S+", "", text)  # remove mentions and URLs
+
+    text = text.lower()  # lowercase the text
+
+    remove_tokens = [
+        "&gt;",
+        "&gt",
+        "&amp;",
+        "&lt;",
+        "#x200B;",
+        "…",
+        "!delta",
+        "δ",
+        "tifu",
+        "cmv:",
+        "cmv",
+    ]
+
+    for t in remove_tokens:  # remove unwanted tokens
+        text = text.replace(t, "")
+
+    text = " ".join(
+        re.split("\s+", text, flags=re.UNICODE)
+    )  # remove unnecessary white space
+
+    text = text.strip()  # strip
+
+    return text
 
 
 def har_prediction(feed_post, platform):
@@ -45,20 +92,22 @@ def har_prediction(feed_post, platform):
     platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
 
     Returns:
-    HaR score (int): The predicted HaR class for `feed_post, {0,1}
+    HaR score (float): The predicted HaR score for a feed_post
     """
-    try:
-        text = feed_post.get('text')
+    if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
+        model = MODELS["toxicity_trigger_twitter"]["pipeline"]
+    else:
+        model = MODELS["toxicity_trigger_reddit"]["pipeline"]
 
-        emb = qa_model.encode(text)
-        prob_of_har = gnb.predict_proba([emb])[0][1]
+    try:
+        text = feed_post.get("text")  # get the post text
+        text = clean_text(text)  # pre-process the post text
+        score = model.predict(text)[0]["score"]  # generate the score
+        return score
+
     except Exception as e:
         print(e)
-        return 0 
-    if prob_of_har > .8:
-        return 1
-    else:
-        return 0
+        return 0.54  # .54 is the avg score generated by the model for a test set of 250k posts
 
 
 def ar_prediction(feed_post, platform):
@@ -70,28 +119,19 @@ def ar_prediction(feed_post, platform):
     platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
 
     Returns:
-    AR score (int): The AR score for `feed_post` in (0,1)
+    AR score (float): The predicted AR score for a feed_post
     """
-    try:
-        text = feed_post.get('text')
-        emb = qa_model.encode(text)
-        ar_score = lr.predict([emb])[0]
-    except Exception as e:
-        print(e)
-        return 0.5 
-    return ar_score
-
-def toxicity_score(feed_post, platform):
-    mean_toxicity = 0.3
+    if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
+        model = MODELS["attracted_sentiment_twitter"]["pipeline"]
+    else:
+        model = MODELS["attracted_sentiment_reddit"]["pipeline"]
 
     try:
-        text = feed_post.get('text')
-        # model returns a list of toxic score, e.g: [{'label': 'toxic', 'score': 0.0005410030717030168}]
-        results , = toxicity_model(text)
-        toxicity = results['score']
+        text = feed_post.get("text")  # get the post text
+        text = clean_text(text)  # pre-process the post text
+        score = model.predict(text)[0]["score"]  # generate the score
+        return score
+
     except Exception as e:
         print(e)
-        return mean_toxicity 
-    
-    return toxicity
-
+        return 0.5  # .5 is the avg score generated by the model for a test set of 250k posts
