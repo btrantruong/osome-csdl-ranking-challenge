@@ -44,10 +44,7 @@ partisanship_map = {'Very conservative':1,
                     'Very liberal':7}
 data['partisanship_numeric'] = [partisanship_map[pp] for pp in data['partisanship'].values]
 
-data_train = data.sample(frac=0.7,random_state=200)
-data_test = data.drop(data_train.index)
-
-sentences = data_train['Text_processed'].values.tolist()
+sentences = data['Text_processed'].values.tolist()
 
 topic_model = BERTopic(verbose=True)
 
@@ -58,12 +55,12 @@ pd_topic_model = topic_model.get_document_info(sentences)
 data['topic'] = pd_topic_model['Topic'].values.tolist()
 
 topic_diversity = {}
-unique_topics = data_train['topic'].unique()
+unique_topics = data['topic'].unique()
 
 for topic in unique_topics:
     if int(topic) == -1:
         continue
-    partisanship_values = data_train.loc[data_train['topic'] == topic]['partisanship_numeric'].values.tolist()
+    partisanship_values = data.loc[data['topic'] == topic]['partisanship_numeric'].values.tolist()
     topic_diversity[int(topic)] = np.var(partisanship_values)
 
 with open('models/BERTopic_diversity.json','w') as outfile:
