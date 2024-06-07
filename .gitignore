@@ -183,3 +183,4 @@ audience_diversity.py
 data*
 libs/osomerank/models/ER/
 rc-extension/config.ini
+scripts/config.ini
