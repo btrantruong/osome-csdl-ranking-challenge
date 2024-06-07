@@ -73,33 +73,28 @@ def rank():
             item, platform
         )  # first run toxicity detection
 
-        if toxicity > 0.8:  # check the toxicity score
-            processed_item = {
-                "id": id,
-                "text": text,
-                "audience_diversity": ad_score,
-                "har_score": har_score,
-                "ar_score": ar_score,
-            }
+        # get audience diversity score
+        ad_score = audience_diversity(item, platform)
+        har_score = elicited_response.har_prediction(item, platform)
+        ar_score = elicited_response.ar_prediction(item, platform)
+
+        processed_item = {
+            "id": id,
+            "text": text,
+            "audience_diversity": ad_score,
+            "har_score": har_score,
+            "ar_score": ar_score,
+            "toxicity": toxicity,
+        }
+        if toxicity > 0.8:
             toxic_posts.append(processed_item)
-
+        if har_score == 1:
+            har_posts.append(processed_item)
         else:
-            # get audience diversity score
-            ad_score = audience_diversity(item, platform)
-            har_score = elicited_response.har_prediction(item, platform)
-            ar_score = elicited_response.ar_prediction(item, platform)
+            non_har_posts.append(processed_item)
 
-            processed_item = {
-                "id": id,
-                "text": text,
-                "audience_diversity": ad_score,
-                "har_score": har_score,
-                "ar_score": ar_score,
-            }
-            if har_score == 1:
-                har_posts.append(processed_item)
-            else:
-                non_har_posts.append(processed_item)
+    # rank toxic posts in ascending order of toxicity
+    toxic_posts.sort(key=lambda x: x["toxicity"], reverse=False)
 
     # rank non-HaR posts by audience diversity, break tie by AR score
     non_har_posts.sort(
@@ -110,7 +105,7 @@ def rank():
     har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
 
     # concat the two lists, prioritizing non-HaR posts
-    ranked_results = non_har_posts + har_posts
+    ranked_results = non_har_posts + har_posts + toxic_posts
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
 
@@ -120,7 +115,7 @@ def rank():
     save_to_json(
         {
             "rbo": rbo,
-            "ranked_post_ids": ranked_ids,
+            "ranked_posts": ranked_results,
         },
         rank_fpath,
     )
