@@ -1161,7 +1161,7 @@ function composeItem(tweetEntry) {
     type: 'post',
     embedded_urls: [],
     text: legacy['full_text'],
-    engagements: engagements
+    // engagements: engagements
   };
   return item;
 }

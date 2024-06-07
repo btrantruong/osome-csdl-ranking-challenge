@@ -180,5 +180,5 @@ test/
 sample_data/*_json/
 *.zip
 audience_diversity.py
-data/extension_data/*
+data/
 libs/osomerank/models/ER/

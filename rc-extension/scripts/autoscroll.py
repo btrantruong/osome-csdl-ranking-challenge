@@ -5,8 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 import time
-import random
-import pandas as pd
 import configparser
 import os
 import sys
@@ -16,11 +14,14 @@ extension_path = "/Users/baott/osome-csdl-ranking-challenge/rc-extension"
 
 # config
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+# print(f"Reading config file, {os.path.join(os.path.dirname(__file__), 'config.ini')}")
+# print(f"Reading config file, {os.path.join(os.path.dirname(__file__), 'config.ini')}")
+config.read("/Users/baott/osome-csdl-ranking-challenge/rc-extension/config.ini")
 
 handle_no = sys.argv[1]  # the account-password pair to use
 username = config.get("FACEBOOK", f"account_{handle_no}")
 password = config.get("FACEBOOK", f"password_{handle_no}")
+print(f"Logging in.. username: {username}\npassword: {password}")
 # # code to ignore browser notifications
 # chrome_options = webdriver.ChromeOptions()
 # prefs = {"profile.default_content_setting_values.notifications": 2}
@@ -50,9 +51,6 @@ email_input.send_keys(username)
 password_input = driver.find_element(By.ID, "pass")
 password_input.send_keys(password)
 
-# Save the main window handle
-main_window = driver.current_window_handle
-
 # Submit the login form
 password_input.send_keys(Keys.RETURN)
 
@@ -69,5 +67,5 @@ def scroll_down_page(scroll_times, delay):
         time.sleep(delay)
 
 
-# Scroll down the page 10 times with a 2-second delay between each scroll
+# Scroll down the page 10 times with a 10-second delay between each scroll
 scroll_down_page(10, 10)
