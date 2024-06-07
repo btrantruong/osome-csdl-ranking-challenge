@@ -2,21 +2,15 @@ from flask import Flask, jsonify, request, json
 import os
 from flask_cors import CORS
 from osomerank import audience_diversity, elicited_response
+from osomerank.utils import profile
 import rbo
 import numpy as np
-
-import profileit
-
-
 
 app = Flask(__name__)
 CORS(app)
 
 # Change the file path
 JSON_OUTDIR = "data/extension_data"
-
-# Set profileit settings to log to a file
-profileit.set_defaults(log_filename='profiling_results.log')
 
 @app.route("/")
 def welcome():
@@ -51,19 +45,19 @@ def log():
 
 ## timing 
 
-@profileit.profileit("toxicity_score")
+@profile
 def toxicity_and_profile(item, platform):
     return elicited_response.toxicity_score(item, platform)
 
-@profileit.profileit("audience_diversity")
+@profile
 def ad_and_profile(item, platform):
     return audience_diversity(item, platform)
 
-@profileit.profileit("har_prediction")
+@profile
 def har_and_profile(item, platform):
     return elicited_response.har_prediction(item, platform)
 
-@profileit.profileit("ar_prediction")
+@profile
 def ar_and_profile(item, platform):
     return elicited_response.ar_prediction(item, platform)
 
@@ -75,13 +69,9 @@ def rank():
 
     print("** Received POST request.. Begin processing... ** ")
 
-    post_data = request.get_json("post_content").get(
-        "post_content"
-    )  # receive the data coming
-    post_items = post_data.get("items")  # get the post items array
-    post_sessions = post_data["session"]  # get the sessions
-    platform = post_data.get("session")["platform"]  # platform which the posts received
+    post_items = request.get("items")  # get the post items array
 
+    platform='twitter'
     # write the json file
     session_id = post_sessions["current_time"]
     unranked_fpath = os.path.join(JSON_OUTDIR, f"{platform}_raw__{session_id}.json")
