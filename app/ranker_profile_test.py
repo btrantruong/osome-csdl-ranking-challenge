@@ -4,13 +4,21 @@ sys.path.append(".")  # allows for importing from the current directory
 
 import pytest
 
-import ranking_server
-import sample_data
+import ranker_profile
+import time
+from osomerank.utils import get_file_logger
+import os 
+import glob
+import json
 
+log_dir = "/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/app/logs"
+logger = get_file_logger(log_dir= log_dir,
+                         log_file=os.path.join(log_dir,"ranker_profile_test.log"),
+                         also_print=True)
 
 @pytest.fixture
 def app():
-    app = ranking_server.app
+    app = ranker_profile.app
     yield app
 
 
@@ -20,31 +28,21 @@ def client(app):
 
 
 def test_rank(client):
-    # Send POST request to the API
-    response = client.post("/rank", json=sample_data.BASIC_EXAMPLE)
+    for fpath in glob.glob("/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/data/extension_data/*.json"):
+        fname = os.path.basename(fpath)
+        payload = json.load(open(fpath))
+        logger.info(f"** Testing {fname}")
 
-    # Check if the request was successful (status code 200)
-    assert response.status_code == 200
+        start = time.time()
+        # Send POST request to the API
+        response = client.post("/rank", json=payload)
 
-    # Check if the response is a dictionary
-    assert isinstance(response.json, dict)
+        total_time = time.time() - start
+        logger.info(f"Request took {total_time:.2f} seconds")
 
-    # # Check if the response contains the expected ids, in the expected order
-    # assert response.json["ranked_ids"] == [
-    #     "571775f3-2564-4cf5-b01c-f4cb6bab461b",
-    #     "s5ad13266-8abk4-5219-kre5-2811022l7e43dv",
-    #     "a4c08177-8db2-4507-acc1-1298220be98d",
-    #     "de83fc78-d648-444e-b20d-853bf05e4f0e",
-    # ]
-
-    # # check for inserted posts
-    # assert response.json["new_items"] == [
-    #     {
-    #         "id": "571775f3-2564-4cf5-b01c-f4cb6bab461b",
-    #         "url": "https://reddit.com/r/PRCExample/comments/1f33ead/example_to_insert",
-    #     }
-    # ]
-
+        # Check if the request was successful (status code 200)
+        assert response.status_code == 200
+        logger.info(f"Tested {fname} successfully")
 
 if __name__ == "__main__":
     pytest.main([__file__])

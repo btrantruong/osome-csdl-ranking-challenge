@@ -68,15 +68,10 @@ def rank():
     har_posts = []  # these posts elicit toxicity
 
     print("** Received POST request.. Begin processing... ** ")
-
+    post_data=request # receive the data coming
     post_items = request.get("items")  # get the post items array
 
     platform='twitter'
-    # write the json file
-    session_id = post_sessions["current_time"]
-    unranked_fpath = os.path.join(JSON_OUTDIR, f"{platform}_raw__{session_id}.json")
-    save_to_json(post_data, unranked_fpath)
-    print(f"** Saved unranked json file to {unranked_fpath} **")
 
     for item in post_items:
         id = item["id"]
