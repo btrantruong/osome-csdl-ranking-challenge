@@ -1,9 +1,10 @@
 from flask import Flask, jsonify, request, json
 import os
 from flask_cors import CORS
-from osomerank import audience_diversity, elicited_response
-import rbo
-import numpy as np
+
+# from osomerank import audience_diversity, elicited_response
+# import rbo
+# import numpy as np
 import configparser
 
 app = Flask(__name__)
@@ -11,7 +12,7 @@ CORS(app)
 
 # Change the file path
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+config.read("/Users/baott/osome-csdl-ranking-challenge/rc-extension/config.ini")
 JSON_OUTDIR = config.get("DATA", "data_path")
 
 
@@ -68,85 +69,87 @@ def rank():
     save_to_json(post_data, unranked_fpath)
     print(f"** Saved unranked json file to {unranked_fpath} **")
 
-    for item in post_items:
-        id = item["id"]
-        text = item["text"]
+    # for item in post_items:
+    #     id = item["id"]
+    #     text = item["text"]
 
-        toxicity = elicited_response.toxicity_score(
-            item, platform
-        )  # first run toxicity detection
+    #     toxicity = elicited_response.toxicity_score(
+    #         item, platform
+    #     )  # first run toxicity detection
 
-        if toxicity > 0.8:  # check the toxicity score
-            processed_item = {
-                "id": id,
-                "text": text,
-                "audience_diversity": ad_score,
-                "har_score": har_score,
-                "ar_score": ar_score,
-            }
-            toxic_posts.append(processed_item)
+    #     if toxicity > 0.8:  # check the toxicity score
+    #         processed_item = {
+    #             "id": id,
+    #             "text": text,
+    #             "audience_diversity": ad_score,
+    #             "har_score": har_score,
+    #             "ar_score": ar_score,
+    #         }
+    #         toxic_posts.append(processed_item)
 
-        else:
-            # get audience diversity score
-            ad_score = audience_diversity(item, platform)
-            har_score = elicited_response.har_prediction(item, platform)
-            ar_score = elicited_response.ar_prediction(item, platform)
+    #     else:
+    #         # get audience diversity score
+    #         ad_score = audience_diversity(item, platform)
+    #         har_score = elicited_response.har_prediction(item, platform)
+    #         ar_score = elicited_response.ar_prediction(item, platform)
 
-            processed_item = {
-                "id": id,
-                "text": text,
-                "audience_diversity": ad_score,
-                "har_score": har_score,
-                "ar_score": ar_score,
-            }
-            if har_score == 1:
-                har_posts.append(processed_item)
-            else:
-                non_har_posts.append(processed_item)
+    #         processed_item = {
+    #             "id": id,
+    #             "text": text,
+    #             "audience_diversity": ad_score,
+    #             "har_score": har_score,
+    #             "ar_score": ar_score,
+    #         }
+    #         if har_score == 1:
+    #             har_posts.append(processed_item)
+    #         else:
+    #             non_har_posts.append(processed_item)
 
-    # rank non-HaR posts by audience diversity, break tie by AR score
-    non_har_posts.sort(
-        key=lambda x: (x["audience_diversity"], x["ar_score"]), reverse=True
-    )
+    # # rank non-HaR posts by audience diversity, break tie by AR score
+    # non_har_posts.sort(
+    #     key=lambda x: (x["audience_diversity"], x["ar_score"]), reverse=True
+    # )
 
-    # rank HaR posts by AR score
-    har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
+    # # rank HaR posts by AR score
+    # har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
 
-    # concat the two lists, prioritizing non-HaR posts
-    ranked_results = non_har_posts + har_posts
-    ranked_ids = [content.get("id", None) for content in ranked_results]
+    # # concat the two lists, prioritizing non-HaR posts
+    # ranked_results = non_har_posts + har_posts
+    # ranked_ids = [content.get("id", None) for content in ranked_results]
+    # result = {"ranked_ids": ranked_ids}
+
+    # # write the json file
+    # rbo = calculate_rbo(post_data, ranked_ids)
+    # rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
+    # save_to_json(
+    #     {
+    #         "rbo": rbo,
+    #         "ranked_post_ids": ranked_ids,
+    #     },
+    #     rank_fpath,
+    # )
+    # print(
+    #     f"** Rank-biased Overlap (RBO): {np.round(rbo, 3)}. Ranked json data saved to {rank_fpath} **"
+    # )
+    ranked_ids = [content.get("id", None) for content in post_items]
     result = {"ranked_ids": ranked_ids}
-
-    # write the json file
-    rbo = calculate_rbo(post_data, ranked_ids)
-    rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
-    save_to_json(
-        {
-            "rbo": rbo,
-            "ranked_post_ids": ranked_ids,
-        },
-        rank_fpath,
-    )
-    print(
-        f"** Rank-biased Overlap (RBO): {np.round(rbo, 3)}. Ranked json data saved to {rank_fpath} **"
-    )
 
     return jsonify(result)
 
 
-def calculate_rbo(post_data, ranked_hashs):
-    """
-    Calculate the RBO score for a payload.
+# def calculate_rbo(post_data, ranked_hashs):
+#     """
+#     Calculate the RBO score for a payload.
 
-    Args:
-        post_data (json object): raw json payload as given by the extension (unranked)
-        ranked_hashs (list of str): list of hashed id of posts, in the ranked order.
-    """
-    raw_hashs = [item["id"] for item in post_data["items"]]
-    raw_id_map = {hash_id: idx for idx, hash_id in enumerate(raw_hashs)}
-    raw_ids = list(range(len(raw_hashs)))
-    ranked_ids = [raw_id_map[hash_id] for hash_id in ranked_hashs]
-    return rbo.RankingSimilarity(raw_ids, ranked_ids).rbo()
+#     Args:
+#         post_data (json object): raw json payload as given by the extension (unranked)
+#         ranked_hashs (list of str): list of hashed id of posts, in the ranked order.
+#     """
+#     raw_hashs = [item["id"] for item in post_data["items"]]
+#     raw_id_map = {hash_id: idx for idx, hash_id in enumerate(raw_hashs)}
+#     raw_ids = list(range(len(raw_hashs)))
+#     ranked_ids = [raw_id_map[hash_id] for hash_id in ranked_hashs]
+#     return rbo.RankingSimilarity(raw_ids, ranked_ids).rbo()
 
 
 def save_to_json(post_content, fpath):

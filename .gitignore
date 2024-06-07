@@ -182,3 +182,4 @@ sample_data/*_json/
 audience_diversity.py
 data/
 libs/osomerank/models/ER/
+rc-extension/config.ini
