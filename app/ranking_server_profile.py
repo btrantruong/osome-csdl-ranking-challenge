@@ -49,6 +49,23 @@ def log():
         print("Received payload:", payload)
         return jsonify(payload)
 
+## timing 
+
+@profileit.profileit("toxicity_score")
+def toxicity_and_profile(item, platform):
+    return elicited_response.toxicity_score(item, platform)
+
+@profileit.profileit("audience_diversity")
+def ad_and_profile(item, platform):
+    return audience_diversity(item, platform)
+
+@profileit.profileit("har_prediction")
+def har_and_profile(item, platform):
+    return elicited_response.har_prediction(item, platform)
+
+@profileit.profileit("ar_prediction")
+def ar_and_profile(item, platform):
+    return elicited_response.ar_prediction(item, platform)
 
 @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
 def rank():
@@ -74,15 +91,15 @@ def rank():
     for item in post_items:
         id = item["id"]
         text = item["text"]
-
-        toxicity = elicited_response.toxicity_score(
+    
+        toxicity = toxicity_and_profile(
             item, platform
         )  # first run toxicity detection
 
         # get audience diversity score
-        ad_score = audience_diversity(item, platform)
-        har_score = elicited_response.har_prediction(item, platform)
-        ar_score = elicited_response.ar_prediction(item, platform)
+        ad_score = ad_and_profile(item, platform)
+        har_score = har_and_profile(item, platform)
+        ar_score = ar_and_profile(item, platform)
 
         processed_item = {
             "id": id,
