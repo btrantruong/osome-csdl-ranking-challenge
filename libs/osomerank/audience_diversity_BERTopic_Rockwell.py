@@ -59,10 +59,8 @@ partisanship_map = {'Very conservative':1,
                     'Very liberal':7}
 data['partisanship_numeric'] = [partisanship_map[pp] for pp in data['partisanship'].values]
 
-logger.info("Training BERTopic model..")
-data_train = data.sample(frac=0.7,random_state=200)
-data_test = data.drop(data_train.index)
 
+logger.info("Training BERTopic model..")
 sentences = data['Text_processed'].values.tolist()
 
 topic_model = BERTopic(verbose=True)
