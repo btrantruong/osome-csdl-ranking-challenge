@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "the pro-social ranking challenge"
+version = "0.1.0"
+description = "Testing ranking algorithms to improve social cohesion."
+authors = ["Janielle Jackson <jmjackson81303@gmail.com>"]
+license = "UMD"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
