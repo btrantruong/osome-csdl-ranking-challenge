@@ -16,6 +16,7 @@ import re
 import requests
 import json
 import traceback
+from unshorten_URLs import unshorten_main
 
 import os
 import configparser
@@ -113,9 +114,10 @@ def audience_diversity_multiple(feed_posts, sm_type):
         if sm_type == "twitter":
             for i in range(len(feed_posts)):
                 feed_post = feed_posts[i]
-                if feed_post["expanded_url"]:
-                    urls_index.append(i)
-                    urls_available.append(feed_post["expanded_url"])
+                if feed_post["embedded_urls"]:
+                    for urll in feed_post["embedded_urls"]:
+                        urls_index.append(i)
+                        urls_available.append(urll)
 
         else:
             for i in range(len(feed_posts)):
@@ -126,11 +128,17 @@ def audience_diversity_multiple(feed_posts, sm_type):
                             urls_index.append(i)
                             urls_available.append(URL_from_text(feed_post["text"]))
 
-        urls_available_unshortened = process_URL_multiple(urls_available)
+        if urls_available:
+            urls_available_unshortened = unshorten_main(urls_available)
+            #urls_available_unshortened = process_URL_multiple(urls_available)
+        else:
+            urls_available_unshortened = []
 
         for i in range(len(urls_available_unshortened)):
             url_available = urls_available_unshortened[i]
             domain = ".".join(url_available.split("/")[2].split(".")[-2:])
+            if 'twitter' in domain:
+                continue
             if domain in audience_diversity_domains:
                 audience_diversity_val[urls_index[i]] = pd_audience_diversity_URLs.loc[
                     pd_audience_diversity_URLs["private_domain"] == domain
@@ -183,7 +191,6 @@ def audience_diversity_multiple(feed_posts, sm_type):
             audience_diversity_val[i] = mean_topic_diversity
 
     return audience_diversity_val
-
 
 def audience_diversity(feed_post, sm_type):
     url_available = ""
