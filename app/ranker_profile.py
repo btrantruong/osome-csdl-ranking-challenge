@@ -5,6 +5,7 @@ from osomerank import audience_diversity, elicited_response
 from osomerank.utils import profile
 import rbo
 import numpy as np
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
@@ -45,9 +46,9 @@ def log():
 
 ## timing 
 
-@profile
-def toxicity_and_profile(item, platform):
-    return elicited_response.toxicity_score(item, platform)
+# @profile
+# def toxicity_and_profile(item, platform):
+#     return elicited_response.toxicity_score(item, platform)
 
 @profile
 def ad_and_profile(item, platform):
@@ -68,8 +69,8 @@ def rank():
     har_posts = []  # these posts elicit toxicity
 
     print("** Received POST request.. Begin processing... ** ")
-    post_data=request # receive the data coming
-    post_items = request.get("items")  # get the post items array
+    post_data=request.get_json() # receive the data coming
+    post_items = post_data.get("items")  # get the post items array
 
     platform='twitter'
 
@@ -77,9 +78,9 @@ def rank():
         id = item["id"]
         text = item["text"]
     
-        toxicity = toxicity_and_profile(
-            item, platform
-        )  # first run toxicity detection
+        # toxicity = toxicity_and_profile(
+        #     item, platform
+        # )  # first run toxicity detection
 
         # get audience diversity score
         ad_score = ad_and_profile(item, platform)
@@ -92,17 +93,17 @@ def rank():
             "audience_diversity": ad_score,
             "har_score": har_score,
             "ar_score": ar_score,
-            "toxicity": toxicity,
+            # "toxicity": toxicity,
         }
-        if toxicity > 0.8:
-            toxic_posts.append(processed_item)
+        # if toxicity > 0.8:
+        #     toxic_posts.append(processed_item)
         if har_score == 1:
             har_posts.append(processed_item)
         else:
             non_har_posts.append(processed_item)
 
-    # rank toxic posts in ascending order of toxicity
-    toxic_posts.sort(key=lambda x: x["toxicity"], reverse=False)
+    # # rank toxic posts in ascending order of toxicity
+    # toxic_posts.sort(key=lambda x: x["toxicity"], reverse=False)
 
     # rank non-HaR posts by audience diversity, break tie by AR score
     non_har_posts.sort(
@@ -113,13 +114,18 @@ def rank():
     har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
 
     # concat the two lists, prioritizing non-HaR posts
-    ranked_results = non_har_posts + har_posts + toxic_posts
+    # ranked_results = non_har_posts + har_posts + toxic_posts
+    ranked_results = non_har_posts + har_posts
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
 
-    # write the json file
+    # get rbo
     rbo = calculate_rbo(post_data, ranked_ids)
-    rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
+
+    # write the json file
+    # Format the current time
+    formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
+    rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked--{formatted_time}.json")
     save_to_json(
         {
             "rbo": rbo,

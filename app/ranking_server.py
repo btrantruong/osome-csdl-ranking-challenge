@@ -88,7 +88,7 @@ def rank():
         }
         if toxicity > 0.8:
             toxic_posts.append(processed_item)
-        if har_score == 1:
+        if har_score == 1: # TODO: take into account range of har score
             har_posts.append(processed_item)
         else:
             non_har_posts.append(processed_item)
@@ -96,12 +96,12 @@ def rank():
     # rank toxic posts in ascending order of toxicity
     toxic_posts.sort(key=lambda x: x["toxicity"], reverse=False)
 
-    # rank non-HaR posts by audience diversity, break tie by AR score
+    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
     non_har_posts.sort(
         key=lambda x: (x["audience_diversity"], x["ar_score"]), reverse=True
     )
 
-    # rank HaR posts by AR score
+    # rank HaR posts by AR score TODO: Check correlation between HaR & AR; HaR & AD
     har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
 
     # concat the two lists, prioritizing non-HaR posts

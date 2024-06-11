@@ -13,7 +13,7 @@ import json
 
 log_dir = "/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/app/logs"
 logger = get_file_logger(log_dir= log_dir,
-                         log_file=os.path.join(log_dir,"ranker_profile_test.log"),
+                         full_log_path=os.path.join(log_dir,"ranker_profile_test.log"),
                          also_print=True)
 
 @pytest.fixture
@@ -28,7 +28,7 @@ def client(app):
 
 
 def test_rank(client):
-    for fpath in glob.glob("/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/data/extension_data/*.json"):
+    for fpath in glob.glob("/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/data/extension_dowon/*.json"):
         fname = os.path.basename(fpath)
         payload = json.load(open(fpath))
         logger.info(f"** Testing {fname}")
