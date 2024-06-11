@@ -1,0 +1,258 @@
+ncalls,tottime,percall,cumtime,percall,filename:lineno(function)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/osome-csdl-ranking-challenge/app/ranker_profile.py:61(ar_and_profile)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/osome-csdl-ranking-challenge/libs/osomerank/elicited_response.py:118(ar_prediction)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:991(predict)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:121(__call__)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1181(__call__)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1248(run_single)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1141(forward)
+1,0.000,0.000,0.007,0.007,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:182(_forward)
+230/1,0.000,0.000,0.006,0.006,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:1528(_wrapped_call_impl)
+230/1,0.000,0.000,0.006,0.006,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:1534(_call_impl)
+1,0.000,0.000,0.006,0.006,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:1166(forward)
+1,0.000,0.000,0.006,0.006,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:722(forward)
+1,0.000,0.000,0.006,0.006,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:477(forward)
+12,0.000,0.000,0.006,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:398(forward)
+12,0.000,0.000,0.004,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:327(forward)
+12,0.001,0.000,0.003,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:177(forward)
+12,0.000,0.000,0.002,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pytorch_utils.py:166(apply_chunking_to_forward)
+74,0.000,0.000,0.002,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/linear.py:115(forward)
+74,0.002,0.000,0.002,0.000,{built-in method torch._C._nn.linear}
+12,0.000,0.000,0.001,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:463(feed_forward_chunk)
+12,0.000,0.000,0.001,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:287(forward)
+12,0.000,0.000,0.001,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:375(forward)
+24,0.001,0.000,0.001,0.000,{built-in method torch.matmul}
+12,0.000,0.000,0.001,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:361(forward)
+25,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/normalization.py:200(forward)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:3103(signature)
+25,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/functional.py:2558(layer_norm)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2851(from_callable)
+26/13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2218(_signature_from_callable)
+25,0.000,0.000,0.000,0.000,{built-in method torch.layer_norm}
+36,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:172(transpose_for_scores)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2124(_signature_from_function)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:86(forward)
+39,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/dropout.py:58(forward)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:165(preprocess)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:2809(__call__)
+423,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:1696(__getattr__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:2898(_call_one)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:3010(encode_plus)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/tokenization_roberta_fast.py:226(_encode_plus)
+39,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/functional.py:1279(dropout)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:561(_encode_plus)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/tokenization_roberta_fast.py:217(_batch_encode_plus)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:476(_batch_encode_plus)
+12,0.000,0.000,0.000,0.000,{method 'contiguous' of 'torch._C.TensorBase' objects}
+12,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/activations.py:77(forward)
+12,0.000,0.000,0.000,0.000,{built-in method torch._C._nn.gelu}
+48,0.000,0.000,0.000,0.000,{method 'permute' of 'torch._C.TensorBase' objects}
+230,0.000,0.000,0.000,0.000,{built-in method torch._C._get_tracing_state}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:1435(forward)
+1,0.000,0.000,0.000,0.000,{method 'encode_batch' of 'tokenizers.Tokenizer' objects}
+12,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/functional.py:1855(softmax)
+48,0.000,0.000,0.000,0.000,{method 'view' of 'torch._C.TensorBase' objects}
+5/2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1048(_ensure_tensor_on_device)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/models/roberta/modeling_roberta.py:1546(create_position_ids_from_input_ids)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/modeling_utils.py:1031(get_extended_attention_mask)
+26,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2772(__init__)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:1812(_signature_bound_method)
+12,0.000,0.000,0.000,0.000,{method 'softmax' of 'torch._C.TensorBase' objects}
+4,0.000,0.000,0.000,0.000,{method 'to' of 'torch._C.TensorBase' objects}
+35,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2489(__init__)
+39,0.000,0.000,0.000,0.000,{built-in method torch.dropout}
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:359(__post_init__)
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/sparse.py:162(forward)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:189(postprocess)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1056(<dictcomp>)
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/functional.py:2154(embedding)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2865(replace)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:204(__init__)
+3,0.000,0.000,0.000,0.000,{built-in method torch.embedding}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:681(convert_to_tensors)
+2,0.000,0.000,0.000,0.000,{built-in method builtins.next}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1004(device_placement)
+52,0.000,0.000,0.000,0.000,{method 'size' of 'torch._C.TensorBase' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/contextlib.py:108(__enter__)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:493(unwrap)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1051(<dictcomp>)
+12,0.000,0.000,0.000,0.000,{method 'transpose' of 'torch._C.TensorBase' objects}
+36,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/enum.py:313(__call__)
+39,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_VF.py:26(__getattr__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:718(as_tensor)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/osome-csdl-ranking-challenge/libs/osomerank/elicited_response.py:59(clean_text)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:360(__init__)
+164,0.000,0.000,0.000,0.000,{built-in method builtins.isinstance}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/_utils.py:9(_get_device_index)
+2,0.000,0.000,0.000,0.000,{built-in method torch.tensor}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/modeling_utils.py:972(dtype)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/modeling_utils.py:241(get_parameter_dtype)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_tensor.py:34(wrapped)
+1,0.000,0.000,0.000,0.000,{built-in method torch.cumsum}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_utils.py:759(_get_device_index)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:118(is_tensor)
+1,0.000,0.000,0.000,0.000,<string>:2(__init__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_tensor.py:964(__rsub__)
+48,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2821(<genexpr>)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:2207(parameters)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_utils.py:733(_get_current_device_index)
+1,0.000,0.000,0.000,0.000,{built-in method torch.rsub}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_utils.py:721(_get_device_attr)
+25,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/backends/__init__.py:36(__get__)
+15/12,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/configuration_utils.py:261(__getattribute__)
+15,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:434(__setattr__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:2232(named_parameters)
+84,0.000,0.000,0.000,0.000,{built-in method builtins.getattr}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/collections/__init__.py:981(__init__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:18(sigmoid)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:2193(_named_members)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:97(_get_frameworks_and_test_func)
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/dataclasses.py:1022(fields)
+51,0.000,0.000,0.000,0.000,{built-in method torch._C._has_torch_function_unary}
+1,0.000,0.000,0.000,0.000,{method 'ne' of 'torch._C.TensorBase' objects}
+5/3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:427(__getitem__)
+6,0.000,0.000,0.000,0.000,{built-in method builtins.all}
+1,0.000,0.000,0.000,0.000,{built-in method torch.tanh}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_utils.py:708(_get_available_device_type)
+1,0.000,0.000,0.000,0.000,{method 'int' of 'torch._C.TensorBase' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/re.py:223(split)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:105(is_available)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/modeling_utils.py:4444(warn_if_padding_and_no_attention_mask)
+16,0.000,0.000,0.000,0.000,{built-in method builtins.hasattr}
+26,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:158(isfunction)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:513(_is_wrapper)
+1,0.000,0.000,0.000,0.000,{method 'type_as' of 'torch._C.TensorBase' objects}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/_collections_abc.py:824(update)
+36,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/enum.py:631(__new__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:453(to_tuple)
+1,0.000,0.000,0.000,0.000,{method 'long' of 'torch._C.TensorBase' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:405(set_truncation_and_padding)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/re.py:203(sub)
+44,0.000,0.000,0.000,0.000,{built-in method builtins.len}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:523(<listcomp>)
+12,0.000,0.000,0.000,0.000,{built-in method math.sqrt}
+28,0.000,0.000,0.000,0.000,{built-in method torch._C._has_torch_function_variadic}
+55,0.000,0.000,0.000,0.000,{method 'get' of 'dict' objects}
+57,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2539(name)
+25,0.000,0.000,0.000,0.000,{built-in method torch._C._get_cudnn_enabled}
+1,0.000,0.000,0.000,0.000,{method 'max' of 'numpy.ndarray' objects}
+35,0.000,0.000,0.000,0.000,{method 'isidentifier' of 'str' objects}
+9/6,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:2369(named_modules)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:101(_nvml_based_avail)
+7,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/abc.py:96(__instancecheck__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/numpy/core/_methods.py:39(_amax)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/contextlib.py:117(__exit__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:274(_convert_encoding)
+1,0.000,0.000,0.000,0.000,{method 'split' of 're.Pattern' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/os.py:766(getenv)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/text_classification.py:91(_sanitize_parameters)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_utils.py:735(<lambda>)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/re.py:289(_compile)
+1,0.000,0.000,0.000,0.000,{method 'numpy' of 'torch._C.TensorBase' objects}
+4,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:440(__setitem__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/_collections_abc.py:657(get)
+1,0.000,0.000,0.000,0.000,{method 'reduce' of 'numpy.ufunc' objects}
+13,0.000,0.000,0.000,0.000,{method 'values' of 'mappingproxy' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:776(current_device)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/autograd/grad_mode.py:183(__init__)
+48,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2551(kind)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/autograd/grad_mode.py:79(__enter__)
+1,0.000,0.000,0.000,0.000,{method 'expand' of 'torch._C.TensorBase' objects}
+4,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:457(<genexpr>)
+13,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:373(<genexpr>)
+39,0.000,0.000,0.000,0.000,{method 'append' of 'list' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:344(__init__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:79(infer_framework_from_repr)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/autograd/grad_mode.py:83(__exit__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:159(is_torch_tensor)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/os.py:670(__getitem__)
+7,0.000,0.000,0.000,0.000,{built-in method _abc._abc_instancecheck}
+18,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/dataclasses.py:1037(<genexpr>)
+1,0.000,0.000,0.000,0.000,{method 'sub' of 're.Pattern' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/utils/_contextlib.py:149(__new__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/import_utils.py:647(is_torchdynamo_compiling)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:367(__exit__)
+26,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2857(parameters)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:2671(_get_padding_truncation_strategies)
+15,0.000,0.000,0.000,0.000,{built-in method builtins.id}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/contextlib.py:238(helper)
+26,0.000,0.000,0.000,0.000,{built-in method builtins.callable}
+13,0.000,0.000,0.000,0.000,{built-in method sys.getrecursionlimit}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/container.py:315(__iter__)
+15,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:369(<genexpr>)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/import_utils.py:1478(is_torch_fx_proxy)
+2,0.000,0.000,0.000,0.000,{method 'item' of 'numpy.generic' objects}
+22,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/inspect.py:2543(default)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/contextlib.py:82(__init__)
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/_collections_abc.py:719(__iter__)
+3,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/nn/modules/module.py:2260(<lambda>)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:364(__enter__)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/types.py:171(__get__)
+17,0.000,0.000,0.000,0.000,{method 'keys' of 'collections.OrderedDict' objects}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:153(_is_torch)
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._cuda_getDevice}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/configuration_utils.py:386(use_return_dict)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/os.py:748(encode)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/jit/_trace.py:1133(is_tracing)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:114(<listcomp>)
+11,0.000,0.000,0.000,0.000,{method 'replace' of 'str' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:263(_lazy_init)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:455(<dictcomp>)
+1,0.000,0.000,0.000,0.000,{method 'argmax' of 'numpy.ndarray' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/autograd/grad_mode.py:74(__init__)
+6,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/collections/__init__.py:1011(__setitem__)
+2,0.000,0.000,0.000,0.000,{built-in method torch._C._set_grad_enabled}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/configuration_utils.py:394(num_labels)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/__init__.py:611(is_tensor)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_dynamo/external_utils.py:14(is_compiling)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:287(items)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/generic.py:115(<dictcomp>)
+9,0.000,0.000,0.000,0.000,{method 'items' of 'collections.OrderedDict' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/collections/__init__.py:1013(__iter__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:216(is_initialized)
+4,0.000,0.000,0.000,0.000,{method 'add' of 'set' objects}
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._cuda_maybeExchangeDevice}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/_collections_abc.py:672(keys)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/cuda/__init__.py:96(_is_compiled)
+5,0.000,0.000,0.000,0.000,{method 'values' of 'dict' objects}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_tensor.py:1059(__hash__)
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._cuda_exchangeDevice}
+3,0.000,0.000,0.000,0.000,{built-in method torch.is_grad_enabled}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/modeling_utils.py:1083(get_head_mask)
+4,0.000,0.000,0.000,0.000,{method 'lower' of 'str' objects}
+2,0.000,0.000,0.000,0.000,{method 'startswith' of 'str' objects}
+1,0.000,0.000,0.000,0.000,{method 'join' of 'str' objects}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:545(<listcomp>)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/enum.py:753(value)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:243(__getitem__)
+3,0.000,0.000,0.000,0.000,{method 'dim' of 'torch._C.TensorBase' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/compiler/__init__.py:157(is_compiling)
+4,0.000,0.000,0.000,0.000,{method 'items' of 'dict' objects}
+4,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/import_utils.py:294(is_torch_available)
+5,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/torch/_jit_internal.py:1120(is_scripting)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/collections/__init__.py:1005(__getitem__)
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:2920(_is_valid_text_input)
+2,0.000,0.000,0.000,0.000,{built-in method builtins.iter}
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._cuda_getDeviceCount}
+1,0.000,0.000,0.000,0.000,{method 'update' of 'dict' objects}
+1,0.000,0.000,0.000,0.000,{method 'encode' of 'str' objects}
+1,0.000,0.000,0.000,0.000,{method 'is_floating_point' of 'torch._C.TensorBase' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/pipelines/base.py:1138(get_inference_context)
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:3908(_eventual_warn_about_too_long_sequence)
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._has_torch_function}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/_collections_abc.py:698(__init__)
+1,0.000,0.000,0.000,0.000,{built-in method __new__ of type object at 0x55d070893620}
+1,0.000,0.000,0.000,0.000,{method 'keys' of 'mappingproxy' objects}
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._is_tracing}
+2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_base.py:3928(_switch_to_input_mode)
+2,0.000,0.000,0.000,0.000,{method 'extend' of 'list' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/tokenization_utils_fast.py:547(<listcomp>)
+1,0.000,0.000,0.000,0.000,{method 'values' of 'collections.OrderedDict' objects}
+1,0.000,0.000,0.000,0.000,{built-in method torch._C._cuda_isInBadFork}
+1,0.000,0.000,0.000,0.000,{method 'disable' of '_lsprof.Profiler' objects}
+2,0.000,0.000,0.000,0.000,{method 'pop' of 'dict' objects}
+1,0.000,0.000,0.000,0.000,{method 'keys' of 'dict' objects}
+1,0.000,0.000,0.000,0.000,{method 'strip' of 'str' objects}
+1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/site-packages/transformers/utils/import_utils.py:486(is_torch_fx_available)
+
+
