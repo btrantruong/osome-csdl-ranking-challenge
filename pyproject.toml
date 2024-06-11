@@ -1,14 +1,22 @@
 [tool.poetry]
-name = "the pro-social ranking challenge"
+name = "osome-csdl-ranking-challenge"
 version = "0.1.0"
 description = "Testing ranking algorithms to improve social cohesion."
-authors = ["Janielle Jackson <jmjackson81303@gmail.com>"]
-license = "UMD"
+authors = ["Your Name <you@example.com>"]
 readme = "README.md"
+package-mode = false
+
+
 
 [tool.poetry.dependencies]
 python = "^3.12"
+Flask = "^3.0.3"
+requests = "^2.32.3"
+nltk = "^3.8.1"
+bertopic = "^0.16.2"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
 
 [build-system]
 requires = ["poetry-core"]
