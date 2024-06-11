@@ -36,7 +36,7 @@ audience_diversity_domains = (
 )
 
 BERTopic_model_loaded = BERTopic.load(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_BERTtopic"))
+    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_rockwell"))
 )
 # BERTopic_model_loaded = BERTopic.load()
 
