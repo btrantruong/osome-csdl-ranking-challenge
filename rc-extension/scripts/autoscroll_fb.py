@@ -41,20 +41,20 @@ chrome_options.add_experimental_option("prefs", prefs)
 driver = webdriver.Chrome(options=chrome_options)
 # Navigate to the URL
 driver.get("https://www.facebook.com")
-time.sleep(5)
+time.sleep(60)
 
 
-email_input = driver.find_element(By.ID, "email")
-email_input.send_keys(username)
+# email_input = driver.find_element(By.ID, "email")
+# email_input.send_keys(username)
 
-# Find the password input field and enter the password
-password_input = driver.find_element(By.ID, "pass")
-password_input.send_keys(password)
+# # Find the password input field and enter the password
+# password_input = driver.find_element(By.ID, "pass")
+# password_input.send_keys(password)
 
-# Submit the login form
-password_input.send_keys(Keys.RETURN)
+# # Submit the login form
+# password_input.send_keys(Keys.RETURN)
 
-time.sleep(5)
+# time.sleep(5)
 
 
 # Function to scroll down the page
@@ -68,4 +68,4 @@ def scroll_down_page(scroll_times, delay):
 
 
 # Scroll down the page 10 times with a 10-second delay between each scroll
-scroll_down_page(10, 10)
+scroll_down_page(100, 10)

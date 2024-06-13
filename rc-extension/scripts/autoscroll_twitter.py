@@ -1,159 +1,71 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.chrome.options import Options
-import time
-import random
-import pandas as pd
+"""
+Browser driver to scroll Twitter. Manual login.
+"""
 
+import time
+from selenium import webdriver
+from selenium.webdriver import ChromeOptions, Keys
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+import configparser
+import os
+import sys
 
 # Path to your Chrome extension
 extension_path = "/Users/baott/osome-csdl-ranking-challenge/rc-extension"
 
-# # code to ignore browser notifications
-# chrome_options = webdriver.ChromeOptions()
-# prefs = {"profile.default_content_setting_values.notifications": 2}
-# chrome_options.add_experimental_option("prefs", prefs)
-# from selenium.webdriver.support.wait import WebDriverWait
+# config
+config = configparser.ConfigParser()
+# print(f"Reading config file, {os.path.join(os.path.dirname(__file__), 'config.ini')}")
+# print(f"Reading config file, {os.path.join(os.path.dirname(__file__), 'config.ini')}")
+config.read("/Users/baott/osome-csdl-ranking-challenge/rc-extension/config.ini")
+
+handle_no = sys.argv[1]  # the account-password pair to use
+username = config.get("TWITTER", f"account_{handle_no}")
+password = config.get("TWITTER", f"password_{handle_no}")
 
 # Chrome options to enable the extension
-chrome_options = Options()
-chrome_options.add_argument(f"--load-extension={extension_path}")
-# Disable notifications
-prefs = {"profile.default_content_setting_values.notifications": 2}
-chrome_options.add_experimental_option("prefs", prefs)
-# Initialize the driver
-# driver = webdriver.Chrome()
 
-# service = Service(chrome_driver_path)
-driver = webdriver.Chrome(options=chrome_options)
-# Navigate to the URL
-driver.get("https://www.x.com/login")
-time.sleep(5)
+options = ChromeOptions()
+options.add_argument("--start-maximized")
+options.add_argument(f"--load-extension={extension_path}")
+# options.add_experimental_option("excludeSwitches", ["enable-automation"])
 
-username = "btrantruong@gmail.com"
-password = "susi03071996"
+# options.add_argument(
+#     "user-data-dir=/Users/baott/Library/Application Support/Google/Chrome/Default"
+# )  # path for MacOS
+# options.add_experimental_option("detach", True)  # prevent window from closing
 
-# # Open the x.com website
-# driver.get("https://x.com")
+# prefs = {"profile.default_content_setting_values.notifications": 2}
+# options.add_experimental_option("prefs", prefs)
+driver = webdriver.Chrome(options=options)
+url = "https://twitter.com/i/flow/login"
+driver.get(url)
 
-# # Find and click the sign-in button or '//*[@data-testid="loginButton"]'
-# sign_in_button = WebDriverWait(driver, 10).until(
-#     EC.element_to_be_clickable(
-#         (
-#             By.XPATH,
-#             "/html/body/div/div/div/div[2]/main/div/div/div[1]/div/div/div[3]/div[4]/a",
-#         )
-#     )  # Replace with the actual XPath or selector
-# )
-# sign_in_button.click()
+# I am giving myself enough time to manually login to the website and then printing the cookie
+time.sleep(60)
+# print(driver.get_cookies())
 
-# Enter the email
-# or /html/body/div/div/div/div/main/div/div/div/div[2]/div[2]/div/div[4]/label/div/div[2]
-# email_input = WebDriverWait(driver, 10).until(
+# # Than I am using add_cookie() to add the cookie/s that I got from get_cookies()
+# driver.add_cookie(driver.get_cookies()[-1])
+
+# print(f"Logging in.. username: {username}\npassword: {password}")
+# username_field = WebDriverWait(driver, 20).until(
 #     EC.visibility_of_element_located(
-#         (
-#             By.XPATH,
-#             "/html/body/div/div/div/div/main/div/div/div/div[2]/div[2]/div/div[4]/label/div/div[1]/div",
-#         )
-#     )  # Replace with the actual XPath or selector
+#         (By.CSS_SELECTOR, 'input[autocomplete="username"]')
+#     )
 # )
-email_input = WebDriverWait(driver, 10).until(
-    EC.visibility_of_element_located(
-        (By.CSS_SELECTOR, 'input[name="text"][autocomplete="username"]')
-    )
-)
-email_input.send_keys(username)
+# username_field.send_keys(username)
+# username_field.send_keys(Keys.ENTER)
 
-# # Click the next button
-# next_button = WebDriverWait(driver, 10).until(
-#     EC.element_to_be_clickable(
-#         (
-#             By.XPATH,
-#             "/html/body/div/div/div/div/main/div/div/div/div[2]/div[2]/div/button[2]",
-#         )
-#     )  # Replace with the actual XPath or selector
+# password_field = WebDriverWait(driver, 10).until(
+#     EC.visibility_of_element_located((By.CSS_SELECTOR, 'input[name="password"]'))
 # )
-# next_button.click()
+# password_field.send_keys(password)
+# password_field.send_keys(Keys.ENTER)
 
-# # Enter the password
-# password_input = WebDriverWait(driver, 10).until(
-#     EC.visibility_of_element_located(
-#         (
-#             By.XPATH,
-#             "/html/body/div/div/div/div/main/div/div/div/div[2]/div[2]/div[1]/div/div/div/div[3]/div/label/div/div[2]/div[1]/input",
-#         )
-#     )  # Replace with the actual XPath or selector
-# )
-
-# Click the next button
-# next_button = WebDriverWait(driver, 10).until(
-#     EC.element_to_be_clickable((By.CSS_SELECTOR, "div.css-146c3p1 > span.css-1jxf684"))
-# )
-# next_button.click()
-
-# Click the next button using JavaScript to avoid interception
-next_button = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located(
-        (By.CSS_SELECTOR, "div.css-146c3p1 > span.css-1jxf684")
-    )
-)
-driver.execute_script("arguments[0].click();", next_button)
-
-
-# Enter the password
-password_input = WebDriverWait(driver, 10).until(
-    EC.visibility_of_element_located(
-        (By.CSS_SELECTOR, 'input[data-testid="ocfEnterTextTextInput"]')
-    )
-)
-password_input.send_keys(password)
-
-# Click the log-in button or data-testid="LoginForm_Login_Button"
-# log_in_button = WebDriverWait(driver, 10).until(
-#     EC.element_to_be_clickable(
-#         (
-#             By.XPATH,
-#             "/html/body/div/div/div/div/main/div/div/div/div[2]/div[2]/div[2]/div/div/div[1]/div/div/button",
-#         )
-#     )  # Replace with the actual XPath or selector
-# )
-
-log_in_button = WebDriverWait(driver, 10).until(
-    EC.element_to_be_clickable(
-        (
-            By.XPATH,
-            '//*[@data-testid="LoginForm_Login_Button"]',
-        )
-    )  # Replace with the actual XPath or selector
-)
-log_in_button.click()
-
-# # Optionally wait for a few seconds before closing the browser
-# WebDriverWait(driver, 10).until(EC.url_changes("https://x.com/login"))
-
-
-# email_input = driver.find_element(By.ID, "email")
-# email_input.send_keys(facebook_username)
-
-# # Find the password input field and enter the password
-# password_input = driver.find_element(By.ID, "pass")
-# password_input.send_keys(facebook_password)
-
-# Save the main window handle
-main_window = driver.current_window_handle
-
-# Submit the login form
-password_input.send_keys(Keys.RETURN)
-
-time.sleep(5)
-# # Do something that opens a new window or tab...
-
-# # Switch back to the main window
-# print("post login")
-# driver.switch_to.window(main_window)
+# time.sleep(10)
 
 
 # Function to scroll down the page
@@ -166,5 +78,5 @@ def scroll_down_page(scroll_times, delay):
         time.sleep(delay)
 
 
-# Scroll down the page 10 times with a 2-second delay between each scroll
-scroll_down_page(10, 10)
+# Scroll down the page 10 times with a 10-second delay between each scroll
+scroll_down_page(100, 10)

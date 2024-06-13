@@ -183,3 +183,6 @@ audience_diversity.py
 data/
 libs/osomerank/models/ER/
 rc-extension/config.ini
+extension_data/
+ozgur_extension_data/
+report/
