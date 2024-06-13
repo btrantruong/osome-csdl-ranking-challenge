@@ -29,7 +29,10 @@ python3 app/ranking_server_test.py
 - Replace `manifest.json` and `service_worker.js` with the 2 files in `rc-extension-update`
 - Install the extension according to directions in `rc-extension/READNE.md` 
 - Run the server following step 3 above. 
-- Now log in to your X/Facebook/Reddit account and scroll. Your account timeline data, plus the ranked posts will be saved in `data/extension_data`
+- Now you can do either of these:
+    - Scroll manually: Log in to your  account and scroll. Your account timeline data, plus the ranked posts will be saved in `data/extension_data`
+    - Scroll automatically: Run one of the selenium scripts in `rc-extension-update/scripts` to collect data from the corresponding social media (X/Facebook/Reddit). 
+    - Note: these scripts will navigate to the login page & wait 1 minute for you to enter the credentials. After you're logged in, the browser driver will scroll automatically.
 
 ### Calculating "dose" 
 

@@ -1,0 +1,76 @@
+{
+  "name": "RC extension",
+  "description": "Social media research prototype.",
+  "version": "0.3.0",
+  "manifest_version": 3,
+  "icons": {
+    "16": "/icons/icon16.png",
+    "32": "/icons/icon32.png",
+    "48": "/icons/icon48.png",
+    "128": "/icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "scripting",
+    "webNavigation",
+    "alarms",
+    "tabs",
+    "nativeMessaging"
+  ],
+  "background": {
+    "service_worker": "service_worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.twitter.com/*",
+        "*://x.com/*",
+        "*://*.reddit.com/*",
+        "https://www.facebook.com/*"
+      ],
+      "run_at": "document_start",
+      "js": [
+        "extension.js",
+        "facebook.js"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "*://*.twitter.com/*",
+        "*://x.com/*"
+      ],
+      "resources": [
+        "twitter.js"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.reddit.com/*"
+      ],
+      "resources": [
+        "reddit.js"
+      ]
+    },
+    {
+      "matches": [
+        "*://*.facebook.com/*"
+      ],
+      "resources": [
+        "facebook.js"
+      ]
+    }
+  ],
+  "externally_connectable": {
+    "matches": [
+      "*://*.twitter.com/*",
+      "*://x.com/*",
+      "*://*.reddit.com/*",
+      "*://*.facebook.com/*"
+    ]
+  },
+  "host_permissions": [
+    "http://localhost:5001/*"
+  ]
+}

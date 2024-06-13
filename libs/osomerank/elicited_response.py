@@ -21,9 +21,11 @@ libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-logger = get_file_logger(os.path.join(libs_path, config.get("ELICITED_RESPONSE", "log_dir")),
-                         os.path.join(libs_path, config.get("ELICITED_RESPONSE", "training_log_file")),
-                         also_print=True)
+logger = get_file_logger(
+    os.path.join(libs_path, config.get("ELICITED_RESPONSE", "log_dir")),
+    os.path.join(libs_path, config.get("ELICITED_RESPONSE", "training_log_file")),
+    also_print=True,
+)
 
 model_names = ["toxicity_trigger", "attracted_sentiment"]
 platforms = ["twitter", "reddit"]
@@ -34,7 +36,9 @@ MODEL_PIPELINES = defaultdict()
 for model_name in model_names:
     for platform in platforms:
         logger.info(f"Loading {model_name}_{platform} model..")
-        model_path = os.path.join(libs_path, config.get("ELICITED_RESPONSE", f"{model_name}_{platform}"))
+        model_path = os.path.join(
+            libs_path, config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
+        )
         tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path=model_path
         )
@@ -50,7 +54,7 @@ for model_name in model_names:
             truncation=True,
             batch_size=8,
             # top_k=None,
-            device="cuda",  # switch to 0 when using CPU
+            # device="cuda",  # switch to 0 when using CPU
         )
         MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
         logger.info(f"Loaded {model_name}_{platform} model.")
