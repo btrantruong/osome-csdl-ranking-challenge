@@ -45,6 +45,76 @@ def log():
 
 
 @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
+def rank_batch():
+    non_har_posts = []  # these posts are ok
+    har_posts = []  # these posts elicit toxicity
+
+    print("** Received POST request.. Begin processing... ** ")
+
+    post_data = request.get_json("post_content").get(
+        "post_content"
+    )  # receive the data coming
+    post_items = post_data.get("items")  # get the post items array
+    post_sessions = post_data["session"]  # get the sessions
+    platform = post_data.get("session")["platform"]  # platform which the posts received
+
+    # write the json file
+    session_id = post_sessions["current_time"]
+    unranked_fpath = os.path.join(JSON_OUTDIR, f"{platform}_raw__{session_id}.json")
+    save_to_json(post_data, unranked_fpath)
+    print(f"** Saved unranked json file to {unranked_fpath} **")
+
+    # get audience diversity score
+    # ad_score = audience_diversity(item, platform)
+    # assuming that order is preserved
+    har_scores = elicited_response.har_prediction(post_items, platform)
+    ar_scores = elicited_response.ar_prediction(post_items, platform)
+
+    for item, har_score, ar_score in zip(post_items, har_scores, ar_scores):
+        processed_item = {
+            "id": item["id"],
+            "text": item["text"],
+            # "audience_diversity": ad_score,
+            "har_score": har_score,
+            "ar_score": ar_score,
+        }
+        if har_score == 1:
+            har_posts.append(processed_item)
+        else:
+            non_har_posts.append(processed_item)
+
+    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
+    non_har_posts.sort(
+        key=lambda x: (x["audience_diversity"], x["ar_score"]), reverse=True
+    )
+
+    # rank HaR posts by AR score TODO: Check correlation between HaR & AR; HaR & AD
+    har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
+
+    # concat the two lists, prioritizing non-HaR posts
+    ranked_results = non_har_posts + har_posts
+    # ranked_results = non_har_posts + har_posts + toxic_posts
+    ranked_ids = [content.get("id", None) for content in ranked_results]
+    result = {"ranked_ids": ranked_ids}
+
+    # write the json file
+    rbo = calculate_rbo(post_data, ranked_ids)
+    rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked__{session_id}.json")
+    save_to_json(
+        {
+            "rbo": rbo,
+            "ranked_posts": ranked_results,
+        },
+        rank_fpath,
+    )
+    print(
+        f"** Rank-biased Overlap (RBO): {np.round(rbo, 3)}. Ranked json data saved to {rank_fpath} **"
+    )
+
+    return jsonify(result)
+
+
+# @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
 def rank():
     toxic_posts = []  # these posts get removed
     non_har_posts = []  # these posts are ok
@@ -88,7 +158,7 @@ def rank():
         }
         if toxicity > 0.8:
             toxic_posts.append(processed_item)
-        if har_score == 1: # TODO: take into account range of har score
+        if har_score == 1:  # TODO: take into account range of har score
             har_posts.append(processed_item)
         else:
             non_har_posts.append(processed_item)

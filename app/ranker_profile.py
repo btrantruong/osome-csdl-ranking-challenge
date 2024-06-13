@@ -5,13 +5,16 @@ from osomerank import audience_diversity, elicited_response
 from osomerank.utils import profile
 import rbo
 import numpy as np
+from bisect import bisect
 from datetime import datetime
+
 
 app = Flask(__name__)
 CORS(app)
 
 # Change the file path
 JSON_OUTDIR = "data/extension_data"
+
 
 @app.route("/")
 def welcome():
@@ -44,40 +47,138 @@ def log():
         print("Received payload:", payload)
         return jsonify(payload)
 
-## timing 
+
+## timing
 
 # @profile
 # def toxicity_and_profile(item, platform):
 #     return elicited_response.toxicity_score(item, platform)
 
+
 @profile
 def ad_and_profile(item, platform):
     return audience_diversity(item, platform)
+
 
 @profile
 def har_and_profile(item, platform):
     return elicited_response.har_prediction(item, platform)
 
+
 @profile
 def ar_and_profile(item, platform):
     return elicited_response.ar_prediction(item, platform)
 
+
+BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+
+
+def find_interval(post_list):
+    return [
+        {
+            "id": post["id"],
+            "text": post["text"],
+            "interval": bisect(BOUNDARIES, post["HaR"]),
+            "AR": post["AR"],
+        }
+        for post in post_list
+    ]
+
+
 @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
+def rank_batch():
+    non_har_posts = []  # these posts are ok
+    har_posts = []  # these posts elicit toxicity
+
+    print("** BATCH Received POST request.. Begin processing... ** ")
+
+    print("** Received POST request.. Begin processing... ** ")
+    post_data = request.get_json()  # receive the data coming
+    post_items = post_data.get("items")  # get the post items array
+
+    platform = "twitter"
+
+    # get audience diversity score
+    # ad_score = audience_diversity(item, platform)
+    # assuming that order is preserved
+    har_scores = elicited_response.har_prediction(post_items, platform)
+    ar_scores = elicited_response.ar_prediction(post_items, platform)
+
+    for item, har_score, ar_score in zip(post_items, har_scores, ar_scores):
+        har_interval = bisect(BOUNDARIES, har_score)
+        print(har_interval)
+        processed_item = {
+            "id": item["id"],
+            "text": item["text"],
+            # "audience_diversity": ad_score,
+            "har_score": har_score,
+            "ar_score": ar_score,
+            "har_interval": har_interval,  # {0,1,2,3,4}
+        }
+        if har_interval == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
+            har_posts.append(processed_item)
+        else:  # posts that have interval 0 or 1: non-hars
+            non_har_posts.append(processed_item)
+
+    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
+    # har_interval 0 is ranked higher than 1
+    # TODO: Add batch mode to AD
+    non_har_posts.sort(
+        key=lambda x: (x["har_interval"], x["audience_diversity"], x["ar_score"]),
+        reverse=(False, True, True),
+    )
+    # non_har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
+
+    # Assumption: HaR & AR works in opposite direction: high HaR - low AR
+    # HaR & AD works in the same direction: high HaR - high AD
+    # rank HaR posts by AR score TODO: Check correlation between HaR & AR; HaR & AD
+    har_posts.sort(
+        key=lambda x: (x["har_interval"], x["ar_score"]), reverse=(False, True)
+    )
+
+    # concat the two lists, prioritizing non-HaR posts
+    # ranked_results = non_har_posts + har_posts + toxic_posts
+    ranked_results = non_har_posts + har_posts
+    ranked_ids = [content.get("id", None) for content in ranked_results]
+    result = {"ranked_ids": ranked_ids}
+
+    # # get rbo
+    # rbo = calculate_rbo(post_data, ranked_ids)
+
+    # # write the json file
+    # Format the current time
+    formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
+    rank_fpath = os.path.join(JSON_OUTDIR, f"{platform}_ranked--{formatted_time}.json")
+    save_to_json(
+        {
+            # "rbo": rbo,
+            "ranked_posts": ranked_results,
+        },
+        rank_fpath,
+    )
+    # print(
+    #     f"** Rank-biased Overlap (RBO): {np.round(rbo, 3)}. Ranked json data saved to {rank_fpath} **"
+    # )
+
+    return jsonify(result)
+
+
+# @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
 def rank():
     toxic_posts = []  # these posts get removed
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
 
     print("** Received POST request.. Begin processing... ** ")
-    post_data=request.get_json() # receive the data coming
+    post_data = request.get_json()  # receive the data coming
     post_items = post_data.get("items")  # get the post items array
 
-    platform='twitter'
+    platform = "twitter"
 
     for item in post_items:
         id = item["id"]
         text = item["text"]
-    
+
         # toxicity = toxicity_and_profile(
         #     item, platform
         # )  # first run toxicity detection
@@ -138,6 +239,7 @@ def rank():
     )
 
     return jsonify(result)
+
 
 def calculate_rbo(post_data, ranked_hashs):
     """
