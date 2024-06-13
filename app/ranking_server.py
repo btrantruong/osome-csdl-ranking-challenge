@@ -4,15 +4,12 @@ from flask_cors import CORS
 from osomerank import audience_diversity, elicited_response
 import rbo
 import numpy as np
-import configparser
 
 app = Flask(__name__)
 CORS(app)
 
 # Change the file path
-config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
-JSON_OUTDIR = config.get("DATA", "data_path")
+JSON_OUTDIR = "data/extension_data"
 
 
 @app.route("/")
