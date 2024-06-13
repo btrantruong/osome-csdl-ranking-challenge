@@ -1,9 +1,0 @@
-ncalls,tottime,percall,cumtime,percall,filename:lineno(function)
-1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/osome-csdl-ranking-challenge/app/ranker_profile.py:53(ad_and_profile)
-1,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/osome-csdl-ranking-challenge/libs/osomerank/audience_diversity.py:188(audience_diversity)
-1,0.000,0.000,0.000,0.000,{built-in method builtins.print}
-2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/codecs.py:327(reset)
-2,0.000,0.000,0.000,0.000,/geode2/home/u015/baotruon/BigRed200/conda/envs/osomerank/lib/python3.8/codecs.py:276(reset)
-1,0.000,0.000,0.000,0.000,{method 'disable' of '_lsprof.Profiler' objects}
-
-
