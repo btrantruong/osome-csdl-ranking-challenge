@@ -1,1 +1,24 @@
-FROM python:3.12.2
+FROM python:3.12
+
+#SET ENV Variables
+
+RUN pip install poetry
+
+WORKDIR /app
+
+COPY poetry.lock pyproject.toml /app/
+
+RUN poetry install --no-root
+
+COPY . /app/
+
+# Expose port 5001 for the Flask Application
+EXPOSE 5001
+
+CMD ["poetry", "run", "python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5001"]
+
+
+
+
+
+

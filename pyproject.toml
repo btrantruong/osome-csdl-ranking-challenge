@@ -3,20 +3,31 @@ name = "osome-csdl-ranking-challenge"
 version = "0.1.0"
 description = "Testing ranking algorithms to improve social cohesion."
 authors = ["Your Name <you@example.com>"]
+license = "MIT"
 readme = "README.md"
-package-mode = false
-
 
 
 [tool.poetry.dependencies]
 python = "^3.12"
-Flask = "^3.0.3"
+Flask = "*"
 requests = "^2.32.3"
-nltk = "^3.8.1"
+sentence-transformers = "^3.0.1"
 bertopic = "^0.16.2"
+black = "^24.4.2"
+flake8 = "^7.0.0"
+neovim = "^0.3.1"
+scikit-learn = "^1.5.0"
+scipy = "^1.13.1"
+seaborn = "^0.13.2"
+pandas = "^2.2.2"
+hdbscan = "^0.8.36"
+isort = "^5.13.2"
+nltk = "^3.8.1"
+flask-cors = "^4.0.1"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
+[tool.poetry.dev-dependencies]
+pytest = "*"
+
 
 [build-system]
 requires = ["poetry-core"]
