@@ -5,12 +5,6 @@ description = "Testing ranking algorithms to improve social cohesion."
 authors = ["Your Name <you@example.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "osomerank", from = "libs" }]
-include = [
-    { path = "libs/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
-    { path = "libs/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },
-    { path = "libs/osomerank/models/ER/*/*.*", format = ["sdist", "wheel"] }
-]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -30,10 +24,6 @@ scipy = "^1.13.1"
 seaborn = "^0.13.2"
 pandas = "^2.2.2"
 hdbscan = "^0.8.36"
-aiohttp = "^3.9.5"
-celery = "^5.4.0"
-gunicorn = "^22.0.0"
-gevent = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
