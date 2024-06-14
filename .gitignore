@@ -179,11 +179,9 @@ libs/osomerank/data/
 test/
 sample_data/*_json/
 *.zip
-audience_diversity.py
 data/
-libs/osomerank/models/ER/
-rc-extension/config.ini
-extension_data/
-ozgur_extension_data/
-report/
-rc-extension/
+!data/sample_data/
+!data/test_data/
+libs/osomerank/models/
+scripts/
+app/ranker*.py

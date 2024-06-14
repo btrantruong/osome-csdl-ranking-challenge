@@ -107,14 +107,13 @@ def process_text_multiple(texts):
     return processed_texts
 
 
-def audience_diversity_multiple(feed_posts, sm_type):
+def ad_prediction(feed_posts, sm_type):
     urls_available = []
     urls_index = []
 
     audience_diversity_val = [-1000] * len(feed_posts)
 
     try:
-
         if sm_type == "twitter":
             for i in range(len(feed_posts)):
                 feed_post = feed_posts[i]
@@ -196,8 +195,7 @@ def audience_diversity_multiple(feed_posts, sm_type):
 
     return audience_diversity_val
 
-
-def audience_diversity(feed_post, sm_type):
+def ad_prediction_single(feed_post, sm_type):
     url_available = ""
 
     audience_diversity_val = -1000
@@ -243,23 +241,3 @@ def audience_diversity(feed_post, sm_type):
         audience_diversity_val = mean_topic_diversity
 
     return audience_diversity_val
-
-
-# if __name__ == "__main__":
-#     sample_post_twitter = {}
-#     with open('sample_posts/sample_post_twitter.json') as ff:
-#         sample_post_twitter = json.load(ff)
-#     print("Audience Diversity for Twitter : ")
-#     print(audience_diversity(sample_post_twitter, "twitter"))
-
-#     sample_post_facebook = {}
-#     with open('sample_posts/sample_post_facebook.json') as ff:
-#         sample_post_facebook = json.load(ff)
-#     print("Audience Diversity for Facebook : ")
-#     print(audience_diversity(sample_post_facebook, "facebook"))
-
-#     sample_post_reddit = {}
-#     with open('sample_posts/sample_post_reddit.json') as ff:
-#         sample_post_reddit = json.load(ff)
-#     print("Audience Diversity for Reddit : ")
-#     print(audience_diversity(sample_post_reddit, "reddit"))
