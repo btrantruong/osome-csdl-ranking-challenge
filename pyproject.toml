@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "osome-csdl-ranking-challenge"
+version = "0.1.0"
+description = "Testing ranking algorithms to improve social cohesion."
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+Flask-Cors = "^4.0.1"
+Flask = "^3.0.3"
+requests = "^2.32.3"
+sentence-transformers = "^3.0.1"
+nltk = "^3.8.1"
+bertopic = "^0.16.2"
+rbo = "^0.1.3"
+black = "^24.4.2"
+isort = "^5.13.2"
+flake8 = "^7.0.0"
+neovim = "^0.3.1"
+scikit-learn = "^1.5.0"
+scipy = "^1.13.1"
+seaborn = "^0.13.2"
+pandas = "^2.2.2"
+hdbscan = "^0.8.36"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
