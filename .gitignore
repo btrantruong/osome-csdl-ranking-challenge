@@ -180,6 +180,6 @@ test/
 sample_data/*_json/
 *.zip
 data/extension_data/*
-libs/osomerank/models/ER/
+libs/osomerank/models/
 scripts/
 app/ranker*.py
