@@ -62,7 +62,7 @@ for model_name in model_names:
             truncation=True,
             batch_size=8,
             # top_k=None,
-            device="cuda",  # switch to 0 when using CPU,
+            # device="cuda",  # uncomment if GPU is available
         )
         MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
         logger.info(f"Loaded {model_name}_{platform} model.")

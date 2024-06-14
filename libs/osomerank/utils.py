@@ -1,10 +1,12 @@
 import logging
 import os
-import sys 
+import sys
+import json
 
 """ Functions for method profiling """
 import cProfile, pstats, io
-from datetime import datetime 
+from datetime import datetime
+
 # Adapted from https://stackoverflow.com/a/53619707
 
 
@@ -54,8 +56,26 @@ def profile(func):
     return wrapper
 
 
-def get_file_logger(log_dir, full_log_path, also_print=False, tqdm=False):
+def save_to_json(post_content, fpath):
+    """
+    Get post content and write to a json file.
+    Parameters
+    -----------
+    - post_content: get all the post content as it is received from platform.
+    Returns
+    -----------
+    None
+    """
+    file_dir = os.path.dirname(fpath)
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
 
+    # write the json to file.
+    with open(fpath, "w") as file:
+        json.dump(post_content, file)
+
+
+def get_file_logger(log_dir, full_log_path, also_print=False, tqdm=False):
     """Create logger."""
 
     # Create log_dir if it doesn't exist already
@@ -89,4 +109,3 @@ def get_file_logger(log_dir, full_log_path, also_print=False, tqdm=False):
         logger.addHandler(ch)
 
     return logger
-

@@ -97,20 +97,15 @@ for topic in unique_topics:
     topic_diversity[int(topic)] = np.var(partisanship_values)
 
 logger.info("Saving model and topic diversity..")
-with open(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")),
-    "w",
-) as outfile:
-    json.dump(topic_diversity, outfile)
 
-logger.info(f"Saved topic diversity!")
 
-embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 model_outpath = os.path.join(
     libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_rockwell")
 )
 if not os.path.exists(model_outpath):
     os.makedirs(model_outpath)
+
+embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
 topic_model.save(
     model_outpath,
     serialization="safetensors",
@@ -119,3 +114,11 @@ topic_model.save(
 )
 
 logger.info(f"Saved model to {model_outpath}")
+
+with open(
+    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")),
+    "w",
+) as outfile:
+    json.dump(topic_diversity, outfile)
+
+logger.info(f"Saved topic diversity!")
