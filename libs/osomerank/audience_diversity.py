@@ -195,7 +195,6 @@ def ad_prediction(feed_posts, sm_type):
 
     return audience_diversity_val
 
-
 def ad_prediction_single(feed_post, sm_type):
     url_available = ""
 
