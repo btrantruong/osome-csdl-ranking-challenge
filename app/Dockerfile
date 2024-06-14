@@ -1,7 +1,5 @@
 FROM python:3.12
 
-#SET ENV Variables
-
 RUN pip install poetry
 
 WORKDIR /app
@@ -10,7 +8,11 @@ COPY poetry.lock pyproject.toml /app/
 
 RUN poetry install --no-root
 
-COPY . /app/
+COPY app/ranking_server.py /app
+
+#SET ENV Variables
+ENV FLASK_APP=ranking_server.py
+ENV FLASK_RUN_PORT=5001
 
 # Expose port 5001 for the Flask Application
 EXPOSE 5001
