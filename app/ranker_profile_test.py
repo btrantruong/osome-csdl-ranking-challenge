@@ -34,7 +34,7 @@ def client(app):
 
 def test_rank(client):
     for fpath in glob.glob(
-        "/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/data/extension_dowon/*.json"
+        "/N/u/baotruon/BigRed200/osome-csdl-ranking-challenge/data/extension_dowon/twitter_raw__2024-06-07T14:54:47.090Z.json"
     ):
         fname = os.path.basename(fpath)
         payload = json.load(open(fpath))

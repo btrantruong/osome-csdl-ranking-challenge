@@ -57,7 +57,7 @@ def log():
 
 @profile
 def ad_and_profile(item, platform):
-    return audience_diversity(item, platform)
+    return audience_diversity.ad_prediction(item, platform)
 
 
 @profile
@@ -73,16 +73,13 @@ def ar_and_profile(item, platform):
 BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
 
 
-def find_interval(post_list):
-    return [
-        {
-            "id": post["id"],
-            "text": post["text"],
-            "interval": bisect(BOUNDARIES, post["HaR"]),
-            "AR": post["AR"],
-        }
-        for post in post_list
-    ]
+def multisort(xs, specs):
+    # efficient sort with multiple keys & orders
+    # specs: list of (key, reverse) tuples. reverse=True: descending order
+    for key, reverse in reversed(specs):
+        xs.sort(key=lambda x: x[key], reverse=reverse)
+
+    return xs
 
 
 @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
@@ -92,52 +89,48 @@ def rank_batch():
 
     print("** BATCH Received POST request.. Begin processing... ** ")
 
-    print("** Received POST request.. Begin processing... ** ")
     post_data = request.get_json()  # receive the data coming
     post_items = post_data.get("items")  # get the post items array
 
     platform = "twitter"
 
     # get audience diversity score
-    # ad_score = audience_diversity(item, platform)
+    ad_scores = audience_diversity.ad_prediction(post_items, platform)
     # assuming that order is preserved
     har_scores = elicited_response.har_prediction(post_items, platform)
     ar_scores = elicited_response.ar_prediction(post_items, platform)
 
-    for item, har_score, ar_score in zip(post_items, har_scores, ar_scores):
-        har_interval = bisect(BOUNDARIES, har_score)
-        print(har_interval)
+    print("Har scores:", har_scores)
+    print("AR scores:", ar_scores)
+    print("AD scores:", ad_scores)
+    for item, har_score, ar_score, ad_score in zip(
+        post_items, har_scores, ar_scores, ad_scores
+    ):
+        har_normalized = bisect(BOUNDARIES, har_score)
         processed_item = {
             "id": item["id"],
             "text": item["text"],
-            # "audience_diversity": ad_score,
+            "audience_diversity": ad_score,
             "har_score": har_score,
             "ar_score": ar_score,
-            "har_interval": har_interval,  # {0,1,2,3,4}
+            "har_normalized": har_normalized,  # {0,1,2,3,4}
         }
-        if har_interval == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
+        if har_normalized == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
             har_posts.append(processed_item)
         else:  # posts that have interval 0 or 1: non-hars
             non_har_posts.append(processed_item)
 
     # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
-    # har_interval 0 is ranked higher than 1
-    # TODO: Add batch mode to AD
-    non_har_posts.sort(
-        key=lambda x: (x["har_interval"], x["audience_diversity"], x["ar_score"]),
-        reverse=(False, True, True),
-    )
-    # non_har_posts.sort(key=lambda x: x["ar_score"], reverse=True)
+    # har_normalized 0 is ranked higher than 1
 
-    # Assumption: HaR & AR works in opposite direction: high HaR - low AR
-    # HaR & AD works in the same direction: high HaR - high AD
-    # rank HaR posts by AR score TODO: Check correlation between HaR & AR; HaR & AD
-    har_posts.sort(
-        key=lambda x: (x["har_interval"], x["ar_score"]), reverse=(False, True)
+    multisort(
+        non_har_posts,
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
     )
+    multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
 
     # concat the two lists, prioritizing non-HaR posts
-    # ranked_results = non_har_posts + har_posts + toxic_posts
+    # ranked_results = non_har_posts + har_posts
     ranked_results = non_har_posts + har_posts
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
