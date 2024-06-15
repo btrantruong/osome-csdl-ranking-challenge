@@ -185,3 +185,6 @@ data/
 libs/osomerank/models/
 scripts/
 app/ranker*.py
+
+# Sensitive data
+libs/osomerank/data
