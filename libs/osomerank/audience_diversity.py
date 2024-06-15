@@ -21,6 +21,26 @@ from osomerank.unshorten_URLs import unshorten_main
 import os
 import configparser
 
+AD_MEAN = 4.86
+AD_STD = 1.64
+TD_MEAN = 2.66
+TD_STD = 1.77
+mean_topic_diversity = 0
+
+platform_urls = [
+        'twitter.com',
+        'youtube.com',
+        'youtu.be',
+        'pubmed.ncbi.nlm.nih.gov',
+        'ncbi.nlm.nih.gov',
+        'tumblr.com',
+        'wikipedia.org',
+        'reddit.com',
+        'facebook.com',
+        'medium.com',
+        'pbs.twimg'
+    ]
+
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
@@ -48,8 +68,6 @@ with open(
     os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json"))
 ) as ff:
     topic_diversity = json.load(ff)
-
-mean_topic_diversity = 0.17
 
 
 def URL_from_text(myString):
@@ -119,17 +137,20 @@ def ad_prediction(feed_posts, sm_type):
                 feed_post = feed_posts[i]
                 if feed_post["embedded_urls"]:
                     for urll in feed_post["embedded_urls"]:
-                        urls_index.append(i)
-                        urls_available.append(urll)
+                        if not any([platform_url in urll for platform_url in platform_urls]):
+                            urls_index.append(i)
+                            urls_available.append(urll)
 
         else:
             for i in range(len(feed_posts)):
                 feed_post = feed_posts[i]
                 if "text" in feed_post.keys():
                     if type(feed_post["text"]) != float:
-                        if URL_from_text(feed_post["text"]) != "NA":
-                            urls_index.append(i)
-                            urls_available.append(URL_from_text(feed_post["text"]))
+                        url_from_text = URL_from_text(feed_post["text"])
+                        if url_from_text != "NA":
+                            if not any([platform_url in url_from_text for platform_url in platform_urls]):
+                                urls_index.append(i)
+                                urls_available.append(url_from_text)
 
         if urls_available:
             urls_available_unshortened = unshorten_main(urls_available)
@@ -140,12 +161,12 @@ def ad_prediction(feed_posts, sm_type):
         for i in range(len(urls_available_unshortened)):
             url_available = urls_available_unshortened[i]
             domain = ".".join(url_available.split("/")[2].split(".")[-2:])
-            if "twitter" in domain:
-                continue
             if domain in audience_diversity_domains:
-                audience_diversity_val[urls_index[i]] = pd_audience_diversity_URLs.loc[
-                    pd_audience_diversity_URLs["private_domain"] == domain
-                ]["visitor_var"].values[0]
+                if not any([platform_url in domain for platform_url in platform_urls]):
+                    ad_val = pd_audience_diversity_URLs.loc[
+                        pd_audience_diversity_URLs["private_domain"] == domain
+                    ]["visitor_var"].values[0]
+                    audience_diversity_val[urls_index[i]] = (ad_val - AD_MEAN)/AD_STD
 
         sm_texts = []
         text_index = []
@@ -181,9 +202,10 @@ def ad_prediction(feed_posts, sm_type):
 
         for i in range(len(topics)):
             if int(topics[i]) != -1:
-                audience_diversity_val[text_index_processed[i]] = topic_diversity[
+                td_val = topic_diversity[
                     str(topics[i])
                 ]
+                audience_diversity_val[text_index_processed[i]] = (td_val - TD_MEAN)/TD_STD
 
     except Exception:
         print(traceback.format_exc())
