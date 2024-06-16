@@ -50,9 +50,6 @@ def log():
 
 @app.route("/rank", methods=["POST"])  # Allow POST requests for this endpoint
 def rank():
-    toxic_posts = []  # these posts get removed
-    non_har_posts = []  # these posts are ok
-    har_posts = []  # these posts elicit toxicity
 
     print("** Received POST request.. Begin processing... ** ")
 

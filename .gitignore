@@ -185,3 +185,5 @@ data/
 libs/osomerank/models/
 scripts/
 app/ranker*.py
+rc-extension/
+report/
