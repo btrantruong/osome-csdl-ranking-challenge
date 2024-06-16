@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, json
 import os
 from flask_cors import CORS
-from osomerank import audience_diversity, elicited_response
+from osomerank import audience_diversity, topic_diversity, elicited_response
 import osomerank.utils as utils
 import rbo
 import numpy as np
@@ -90,15 +90,20 @@ def rank():
     platform = post_data.get("session")["platform"]  # platform which the posts received
 
     # get audience diversity score
-    ad_scores = audience_diversity.ad_prediction(post_items, platform)
+    #ad_scores = audience_diversity.ad_prediction(post_items, platform)
+    ad_link_scores = audience_diversity.ad_prediction(post_items, platform)
+    td_scores = topic_diversity.td_prediction(post_items, platform)
     # assuming that order is preserved
     har_scores = elicited_response.har_prediction(post_items, platform)
     ar_scores = elicited_response.ar_prediction(post_items, platform)
 
-    for item, har_score, ar_score, ad_score in zip(
-        post_items, har_scores, ar_scores, ad_scores
+    for item, har_score, ar_score, ad_link_score, td_score in zip(
+        post_items, har_scores, ar_scores, ad_link_scores, td_scores
     ):
         har_normalized = bisect(BOUNDARIES, har_score)
+        ad_score = ad_link_score
+        if ad_score == -1000:
+            ad_score = td_score
         processed_item = {
             "id": item["id"],
             "text": item["text"],
