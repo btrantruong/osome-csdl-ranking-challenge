@@ -1,3 +1,6 @@
+import sys
+#Print the path to the python executable
+print(sys.executable)
 from flask import Flask, jsonify, request, json
 import os
 from flask_cors import CORS

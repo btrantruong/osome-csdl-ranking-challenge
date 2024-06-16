@@ -1,5 +1,6 @@
 FROM python:3.12
 
+# change dir
 WORKDIR /app
 
 # Install Poetry
@@ -14,12 +15,13 @@ RUN poetry config virtualenvs.create false \
 
 # Copy the rest of the application code
 COPY app/ /app
-COPY /libs/osomerank /app/
+COPY /libs/osomerank /app/libs/osomerank
 
 # Set environment variables
 ENV FLASK_APP=ranking_server.py
 ENV FLASK_ENV=production
 ENV FLASK_RUN_PORT=5001
+#ENV PYTHONPATH “${PYTHONPATH}:/libs/osomerank”
 
 # Expose the port the app runs on
 EXPOSE 5001
