@@ -9,7 +9,9 @@ WORKDIR /app
 
 # Copy only necessary files
 COPY app/ /app/
-COPY libs/osomerank /app/osomerank/
+COPY libs/osomerank/ /app/osomerank/
+COPY libs/osomerank/data/ /app/osomerank/
+COPY libs/osomerank/models/ /app/osomerank/
 COPY poetry.lock pyproject.toml /app/
 
 # Install dependencies
@@ -24,6 +26,7 @@ WORKDIR /app
 
 # Copy installed dependencies from builder stage
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application files
 COPY --from=builder /app /app
