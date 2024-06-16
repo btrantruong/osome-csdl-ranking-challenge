@@ -25,6 +25,7 @@ seaborn = "^0.13.2"
 pandas = "^2.2.2"
 hdbscan = "^0.8.36"
 aiohttp = "^3.9.5"
+celery = "^5.4.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
