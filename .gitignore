@@ -196,7 +196,7 @@ libs/osomerank/data
 
 # App
 app/job_scheduler/
-app/sanbox_worker/
+app/sandbox_worker/
 
 # Sensitive data
 libs/osomerank/data
