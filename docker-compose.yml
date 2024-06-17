@@ -1,0 +1,15 @@
+# template
+# version 3 represents latest & recommended
+version: "3"
+services:
+        app:
+                container_name: app
+                build:
+                        context: ./app
+                        dockerfile: Dockerfile.ranker
+                ports:
+                        - 5001:5001
+
+
+
+  
