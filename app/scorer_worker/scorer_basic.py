@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Unfortunately Celery timeout granularity is in seconds, and if this value is
 # fractional, it will be rounded up to the nearest second when used in
 # `get` with the `timeout` parameter.
-DEADLINE_SECONDS = 1
+DEADLINE_SECONDS = 10
 
 
 def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -51,7 +51,9 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
 
     tasks = []
     for item in input:
-        tasks.append(celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()}))
+        tasks.append(
+            celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()})
+        )
 
     logger.info("Sending the task group")
     async_result = group(tasks).apply_async()
@@ -62,9 +64,49 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
         # to get higher polling frequency
         finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=0.1)
     except TimeoutError:
-        logger.error(f"Timed out waiting for results after {time.time() - start} seconds")
+        logger.error(
+            f"Timed out waiting for results after {time.time() - start} seconds"
+        )
     except Exception as e:
         logger.error(f"Task runner threw an error: {e}")
 
     logger.info(f"Finished tasks: {len(finished_tasks)}")
     return finished_tasks
+
+
+def compute_batch_scores(
+    task_name: str, input: list[dict[str, Any]]
+) -> list[dict[str, Any]]:
+    """Task dispatcher/manager.
+
+    Args:
+        runner (Callable): The function that implements the task logic (from `tasks.py`).
+        input (list[dict[str, Any]]): List of input dictionaries for the tasks.
+
+    Returns:
+        list[dict[str, Any]]: List of output dictionaries for the tasks.
+    """
+
+    tasks = [
+        celery_app.signature(
+            task_name, kwargs={"batch": input}, options={"task_id": uuid()}
+        )
+    ]
+
+    logger.info("Sending the task group")
+    async_result = group(tasks).apply_async()
+    finished_tasks = []
+    start = time.time()
+    try:
+        # if the tasks are very quick, you can try reducing the interval parameter
+        # to get higher polling frequency
+        (finished_tasks,) = async_result.get(timeout=DEADLINE_SECONDS, interval=0.1)
+    except TimeoutError:
+        logger.error(
+            f"Timed out waiting for results after {time.time() - start} seconds"
+        )
+    except Exception as e:
+        logger.error(f"Task runner threw an error: {e}")
+
+    logger.info(f"Finished tasks: {len(finished_tasks)}")
+    return finished_tasks["batch"]

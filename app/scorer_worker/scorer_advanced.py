@@ -56,6 +56,7 @@ class ScorerType(Enum):
     """
 
     SENTIMENT = (auto(), "scorer_worker.tasks.sentiment_scorer")
+    SENTIMENT_BATCH = (auto(), "scorer_worker.tasks.sentiment_batch_scorer")
     RANDOM = (auto(), "scorer_worker.tasks.random_scorer")
 
     def __init__(self, id, runner):
@@ -161,13 +162,17 @@ def compute_scores(input: list[ScoringInput]) -> list[ScoringOutput]:
     t_start = time.time()
     tasks = []
     task_params: dict[str, TaskParams] = {}
+    # prepare tasks for execution
+    # create task signature for each input item
     for item in input:
         scorer_type = item.scorer_type
         item_id = item.data["item_id"]
         task_id = uuid()
         task_params[task_id] = TaskParams(scorer_type=scorer_type, item_id=item_id)
         tasks.append(
-            celery_app.signature(scorer_type.runner, kwargs=item.data, options={"task_id": task_id})
+            celery_app.signature(
+                scorer_type.runner, kwargs=item.data, options={"task_id": task_id}
+            )
         )
 
     logger.info("Sending the task group")
@@ -178,6 +183,7 @@ def compute_scores(input: list[ScoringInput]) -> list[ScoringOutput]:
     output = []
 
     def placeholder_output(task_id: str) -> ScoringOutput:
+        # creates a ScoringOutput object with default values and timings for a given task ID.
         timings = Timings(task_id=task_id, sent=t_sent, enqueued=t_enqueued)
         return ScoringOutput(
             item_id=task_params[task_id].item_id,
@@ -186,6 +192,9 @@ def compute_scores(input: list[ScoringInput]) -> list[ScoringOutput]:
         )
 
     def result_callback(task_id: str, result: dict[str, Any]):
+        # process each task's result,
+        # logging the outcome and updating the ScoringOutput object
+        # with the result or an error message if the task raised an exception.
         logger.info(f"Received result for task {task_id}")
         item_output = placeholder_output(task_id)
         if isinstance(result, Exception):
@@ -196,12 +205,14 @@ def compute_scores(input: list[ScoringInput]) -> list[ScoringOutput]:
             item_output.score = result["score"]
         output.append(item_output)
 
+    # loop to monitor task progress & time out if latency's reached
     pending = {result.id: result for result in async_result.results}
     while True:
         if time.time() - t_start > DEADLINE_SECONDS:
             logger.info("Timeout error")
             break
         for result_id in list(pending.keys()):
+            # if task is ready, process the result and remove it from the pending list
             if pending[result_id].ready():
                 result = pending.pop(result_id)
                 result_callback(result.id, result.result)
@@ -210,6 +221,7 @@ def compute_scores(input: list[ScoringInput]) -> list[ScoringOutput]:
             break
         time.sleep(0.02)
 
+    # for tasks that did not complete in time, add a placeholder output ( with timeout error message)
     for task_id in pending:
         item_output = placeholder_output(task_id)
         item_output.error = "Timed out waiting for results"

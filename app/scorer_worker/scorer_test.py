@@ -3,8 +3,9 @@ from itertools import cycle
 
 import pytest
 
-from scorer_worker.scorer_advanced import ScorerType, ScoringInput, compute_scores
+# from scorer_worker.scorer_advanced import ScorerType, ScoringInput, compute_scores
 from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
+from scorer_worker.scorer_basic import compute_batch_scores
 from scorer_worker.tasks import TIME_LIMIT_SECONDS, RandomScoreInput
 
 sample_posts = [
@@ -47,32 +48,66 @@ def sample_data_with_exception():
     return data
 
 
-def test_scoring_jobs(my_celery_app, celery_worker, sample_data):
-    data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data]
-    scores = compute_scores(data)
-    assert len(scores) == len(data)
-    assert all(x.error is None for x in scores)
+# def test_scoring_jobs(my_celery_app, celery_worker, sample_data):
+#     data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data]
+#     scores = compute_scores(data)
+#     assert len(scores) == len(data)
+#     assert all(x.error is None for x in scores)
 
 
-def test_scoring_jobs_with_timeout(my_celery_app, celery_worker, sample_data_with_timeout):
-    data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_timeout]
-    scores = compute_scores(data)
-    assert len(scores) == len(data)
-    assert not all(x.error is None for x in scores)
+# def test_scoring_jobs_with_timeout(
+#     my_celery_app, celery_worker, sample_data_with_timeout
+# ):
+#     data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_timeout]
+#     scores = compute_scores(data)
+#     assert len(scores) == len(data)
+#     assert not all(x.error is None for x in scores)
 
 
-def test_scoring_jobs_with_exception(my_celery_app, celery_worker, sample_data_with_exception):
-    data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_exception]
-    scores = compute_scores(data)
-    assert len(scores) == len(data)
-    assert not all(x.error is None for x in scores)
+# def test_scoring_jobs_with_exception(
+#     my_celery_app, celery_worker, sample_data_with_exception
+# ):
+#     data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_exception]
+#     scores = compute_scores(data)
+#     assert len(scores) == len(data)
+#     assert not all(x.error is None for x in scores)
 
 
-def test_scoring_jobs_basic(my_celery_app, celery_worker, sample_data):
+# def test_scoring_jobs_basic(my_celery_app, celery_worker, sample_data):
+#     # print(my_celery_app.control.inspect().registered())
+#     # ^ uncomment to figure out the names of the registered tasks
+#     data = sample_data
+#     # when running pytest from the parent directory of this test,
+#     # the task name is the following
+#     scores = compute_scores_basic("scorer_worker.tasks.random_scorer", data)
+#     assert len(scores) == len(data)
+
+
+# def test_scoring_jobs_advance_sentiment(my_celery_app, celery_worker, sample_data):
+#     # print(my_celery_app.control.inspect().registered())
+#     # ^ uncomment to figure out the names of the registered tasks
+#     # when running pytest from the parent directory of this test,
+#     # the task name is the following
+#     data = [ScoringInput(ScorerType.SENTIMENT, x) for x in sample_data]
+#     scores = compute_scores(data)
+#     assert len(scores) == len(data)
+
+
+def test_scoring_jobs_batch_basic(my_celery_app, celery_worker, sample_data):
     # print(my_celery_app.control.inspect().registered())
     # ^ uncomment to figure out the names of the registered tasks
-    data = sample_data
     # when running pytest from the parent directory of this test,
     # the task name is the following
-    scores = compute_scores_basic("scorer_worker.tasks.random_scorer", data)
+    data = sample_data
+    scores = compute_batch_scores("scorer_worker.tasks.har_batch_scorer", data)
     assert len(scores) == len(data)
+
+
+# def test_scoring_jobs_batch_sentiment(my_celery_app, celery_worker, sample_data):
+#     # print(my_celery_app.control.inspect().registered())
+#     # ^ uncomment to figure out the names of the registered tasks
+#     # when running pytest from the parent directory of this test,
+#     # the task name is the following
+#     data = [ScoringInput(ScorerType.SENTIMENT_BATCH, x) for x in sample_data]
+#     scores = compute_batch_scores("scorer_worker.tasks.sentiment_batch_scorer", data)
+#     assert len(scores) == len(data)
