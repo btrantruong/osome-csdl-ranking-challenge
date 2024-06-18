@@ -7,19 +7,15 @@ WORKDIR /app
 RUN pip install poetry
 
 # Copy only the necessary files to install dependencies with Poetry
-COPY pyproject.toml poetry.lock ./
+#COPY pyproject.toml poetry.lock .
 
 # Install dependencies using Poetry
 RUN poetry config virtualenvs.create false \
     && poetry install --no-dev
 
-# Copy the rest of the application code
-COPY app/ /app
-COPY /libs/osomerank /app/libs/osomerank
-
 # Set environment variables
 ENV FLASK_APP=ranking_server.py
-ENV FLASK_ENV=production
+ENV FLASK_ENV=development
 ENV FLASK_RUN_PORT=5001
 #ENV PYTHONPATH “${PYTHONPATH}:/libs/osomerank”
 
@@ -30,4 +26,5 @@ EXPOSE 5001
 ENTRYPOINT ["poetry", "run"]
 
 # Define the command to run the application
-CMD ["python", "-m", "flask", "run", "--host=0.0.0.0", "--port=5001"]
+# Note - Eventually run Gunicorn
+CMD ["gunicorn", "ranking_server.ranking_server:app","--host", "0.0.0.0", "--port","5001"]
