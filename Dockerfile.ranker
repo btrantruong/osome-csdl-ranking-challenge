@@ -24,5 +24,4 @@ EXPOSE 5001
 COPY app/ranking_server.py app/config.ini app/caller.py /app/
 
 # Define the command to run the application
-# CMD ["gunicorn", "--bind", "0.0.0.0:5001", "ranking_server.app"]
 CMD ["gunicorn", "-b", "0.0.0.0:5001", "ranking_server:app"]
