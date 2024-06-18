@@ -15,7 +15,7 @@ import re
 import configparser
 import os
 from collections import defaultdict
-from osomerank.utils import get_file_logger
+from osomerank.utils import get_file_logger, clean_text
 
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
@@ -66,38 +66,6 @@ for model_name in model_names:
         )
         MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
         logger.info(f"Loaded {model_name}_{platform} model.")
-
-
-def clean_text(text):
-
-    text = re.sub(r"(?:\@|https?\://)\S+", "", text)  # remove mentions and URLs
-
-    text = text.lower()  # lowercase the text
-
-    remove_tokens = [
-        "&gt;",
-        "&gt",
-        "&amp;",
-        "&lt;",
-        "#x200B;",
-        "…",
-        "!delta",
-        "δ",
-        "tifu",
-        "cmv:",
-        "cmv",
-    ]
-
-    for t in remove_tokens:  # remove unwanted tokens
-        text = text.replace(t, "")
-
-    text = " ".join(
-        re.split("\s+", text, flags=re.UNICODE)
-    )  # remove unnecessary white space
-
-    text = text.strip()  # strip
-
-    return text
 
 
 def har_prediction(feed_posts, platform):
