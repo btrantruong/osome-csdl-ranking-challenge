@@ -90,7 +90,7 @@ def rank():
     platform = post_data.get("session")["platform"]  # platform which the posts received
 
     # get audience diversity score
-    #ad_scores = audience_diversity.ad_prediction(post_items, platform)
+    # ad_scores = audience_diversity.ad_prediction(post_items, platform)
     ad_link_scores = audience_diversity.ad_prediction(post_items, platform)
     td_scores = topic_diversity.td_prediction(post_items, platform)
     # assuming that order is preserved

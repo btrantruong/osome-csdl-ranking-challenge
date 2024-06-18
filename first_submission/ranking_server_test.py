@@ -24,7 +24,7 @@ def client(app):
 
 
 def test_rank(client):
-    fpath = "data/test_data/twitter_raw__2024-06-14T15:26:28.072Z.json"
+    fpath = "../data/test_data/twitter_raw__2024-06-14T15:26:28.072Z.json"
     payload = json.load(open(fpath))
 
     start = time.time()
