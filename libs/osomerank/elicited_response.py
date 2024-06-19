@@ -93,7 +93,7 @@ def har_prediction(texts, platform):
         return [0.54] * len(texts)
 
 
-def ar_prediction(feed_posts, platform):
+def ar_prediction(texts, platform):
     """
     Calculates the Affect Response (AR) score for a given social media post.
 
