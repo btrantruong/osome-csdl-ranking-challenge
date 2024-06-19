@@ -23,6 +23,13 @@ libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
+s3_region_name = config.get("S3", "S3_REGION_NAME")
+s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+s3_bucket = config.get("S3", "S3_BUCKET")
+
+
+
 BERTopic_model_loaded = BERTopic.load(
     os.path.join(
         libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_BERTtopic")
