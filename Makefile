@@ -1,14 +1,21 @@
-.PHONY : create_conda_env
+.PHONY : create_conda_env install_modules
 .ONESHELL:
 
 SHELL=/bin/bash
-PROJ_NAME=osomerank
+PROJ_NAME=osomerank2
 ENV_PATH=$$(conda info --base)
 CONDA_ACTIVATE=source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate $(PROJ_NAME)
-DEPENDENCIES=conda install -y -c anaconda -c conda-forge black isort flake8 pytest neovim scikit-learn scipy seaborn pandas hdbscan
+
+all: create_conda_env install_modules
 
 create_conda_env:
-	echo "Creating conda environent at ${ENV_PATH}/envs/${PROJ_NAME} (Delete any existing conda env with the same name).."
+	echo "Creating conda enviroment at ${ENV_PATH}/envs/${PROJ_NAME} (Delete any existing conda env with the same name).."
 	rm -rf "${ENV_PATH}/envs/${PROJ_NAME}"
-	conda create --force -y -n $(PROJ_NAME) python=3.8  
-	$(CONDA_ACTIVATE); $(DEPENDENCIES); pip install -e ./libs/; pip install flask-cors flask requests sentence-transformers nltk bertopic rbo
+	conda env create -f environment.yml -p "${ENV_PATH}/envs/${PROJ_NAME}"
+	
+install_modules:
+	$(CONDA_ACTIVATE)
+	echo "Install prediction modules"
+	pip install -e ./libs/
+	echo "Install pydantic models for the PRC API schema"
+	pip install -e ./module/src/
