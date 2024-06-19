@@ -16,7 +16,9 @@ reddit = pd.read_json("reddit_feed.json")
 twitter = pd.read_json("twitter_feed.json")
 
 TARGET_LATENCY = 0.5  # Target latency in seconds (500ms p95)
-NUM_REQUESTS = 600  # Number of requests for each platform to generate a statistically valid sample
+NUM_REQUESTS = (
+    600  # Number of requests for each platform to generate a statistically valid sample
+)
 PLATFORMS = ["Facebook", "Reddit", "Twitter"]
 SAMPLES = {"Facebook": facebook, "Reddit": reddit, "Twitter": twitter}
 
@@ -47,12 +49,14 @@ def generate_items(platform):
 # make a request and add it to results_df
 def issue_request(platform, url, results_df):
     items = generate_items(platform)
-    request = fake_request(n_posts=0, n_comments=0, platform=platform.lower())
+    request = fake_request(n_posts=10, n_comments=0, platform=platform.lower())
     request.items = items
 
     start_time = time.time()
-    response = requests.post(url, json=jsonable_encoder(request))
-    end_time = time.time()
+
+    session = requests.Session()
+    response = session.post(f"{url}/rank", json=jsonable_encoder(request))
+    session.close()
     if response.status_code != 200:
         raise Exception(
             "Request failed with status code: {}, error: {}".format(
@@ -100,4 +104,6 @@ if __name__ == "__main__":
         if p95 <= TARGET_LATENCY:
             print(f"All requests pass for {platform}! p95 was {p95:.3f} seconds.")
         else:
-            print(f"Some requests do not pass for {platform}. p95 was {p95:.3f} seconds.")
+            print(
+                f"Some requests do not pass for {platform}. p95 was {p95:.3f} seconds."
+            )
