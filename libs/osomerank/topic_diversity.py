@@ -3,16 +3,17 @@
 """
 Created on Sun Jun 16 03:45:55 2024
 
-@author: saumya
+@author: saumya (modified by Bao)
 """
 
 from bertopic import BERTopic
 import re
 import json
 import traceback
-
+import boto3
 import os
 import configparser
+from osomerank.utils import clean_text
 
 TD_MEAN = 2.66
 TD_STD = 1.77
@@ -21,6 +22,24 @@ mean_topic_diversity = 0
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+
+s3_region_name = config.get("S3", "S3_REGION_NAME")
+s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+s3_bucket = config.get("S3", "S3_BUCKET")
+
+s3 = boto3.client(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
+)
+
+s3.download_file(Filename="models/AD_rockwell/BERTopic_diversity.json", Bucket=s3_bucket, Key="BERTopic_diversity.json")
+s3.download_file(Filename="models/AD_rockwell/topic_embeddings.safetensors", Bucket=s3_bucket, Key="ctfidf.safetensors")
+s3.download_file(Filename="models/AD_rockwell/topic_embeddings.safetensors", Bucket=s3_bucket, Key="topic_embeddings.safetensors")
+s3.download_file(Filename="models/AD_rockwell/ctfidf_config.json", Bucket=s3_bucket, Key="ctfidf_config.json")
+s3.download_file(Filename="models/AD_rockwell/topics.json", Bucket=s3_bucket, Key="topics.json")
 
 BERTopic_model_loaded = BERTopic.load(
     os.path.join(
@@ -35,6 +54,7 @@ with open(
 ) as ff:
     topic_diversity = json.load(ff)
 
+
 def remove_urls(text, replacement_text=""):
     # Define a regex pattern to match URLs
     url_pattern = re.compile(r"https?://\S+|www\.\S+")
@@ -45,32 +65,12 @@ def remove_urls(text, replacement_text=""):
     return text_without_urls
 
 
-# Filtering text: remove special characters, alphanumeric, return None if text doesn't meet some criterial like just one word or something
-def process_text(text):
-    text_urls_removed = remove_urls(text)
-    if len(text.strip().split(" ")) <= 3:
-        return "NA"
-    return text_urls_removed
-
-
-# Filtering text: remove special characters, alphanumeric, return None if text doesn't meet some criterial like just one word or something
-def process_text_multiple(texts):
-    processed_texts = []
-    for text in texts:
-        text_urls_removed = remove_urls(text)
-        if len(text_urls_removed.strip().split(" ")) <= 3:
-            processed_texts.append("NA")
-        else:
-            processed_texts.append(text_urls_removed)
-    return processed_texts
-
-
 def td_prediction(feed_posts, sm_type):
-    
+
     audience_diversity_val = [-1000] * len(feed_posts)
 
     try:
-        
+
         sm_texts = []
         text_index = []
 
@@ -92,7 +92,7 @@ def td_prediction(feed_posts, sm_type):
                         sm_texts.append(feed_post["text"])
                         text_index.append(i)
 
-        sm_texts_processed = process_text_multiple(sm_texts)
+        sm_texts_processed = [clean_text(text) for text in sm_texts]
         texts_processed = []
         text_index_processed = []
 
@@ -105,20 +105,21 @@ def td_prediction(feed_posts, sm_type):
 
         for i in range(len(topics)):
             if int(topics[i]) != -1:
-                td_val = topic_diversity[
-                    str(topics[i])
-                ]
-                audience_diversity_val[text_index_processed[i]] = (td_val - TD_MEAN)/TD_STD
+                td_val = topic_diversity[str(topics[i])]
+                audience_diversity_val[text_index_processed[i]] = (
+                    td_val - TD_MEAN
+                ) / TD_STD
 
     except Exception:
         print(traceback.format_exc())
-        return [mean_topic_diversity]*len(feed_posts)
+        return [mean_topic_diversity] * len(feed_posts)
 
     for i in range(len(audience_diversity_val)):
         if audience_diversity_val[i] == -1000:
             audience_diversity_val[i] = mean_topic_diversity
 
     return audience_diversity_val
+
 
 def ad_prediction_single(feed_post, sm_type):
     audience_diversity_val = -1000
@@ -134,12 +135,12 @@ def ad_prediction_single(feed_post, sm_type):
                 sm_text = feed_post["text"]
         else:
             sm_text = feed_post["text"]
-        if process_text(sm_text) != "NA":
-            sm_text = process_text(sm_text)
+        if clean_text(sm_text) != "NA":
+            sm_text = clean_text(sm_text)
             topic = BERTopic_model_loaded.transform([sm_text])[0][0]
             if int(topic) != -1:
                 audience_diversity_val = topic_diversity[str(topic)]
-                
+
     except Exception as e:
         print(e)
         return mean_topic_diversity

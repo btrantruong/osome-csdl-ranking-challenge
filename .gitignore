@@ -190,3 +190,7 @@ report/
 
 # Sensitive data
 libs/osomerank/data
+
+# App
+app/job_scheduler/
+app/sanbox_worker/

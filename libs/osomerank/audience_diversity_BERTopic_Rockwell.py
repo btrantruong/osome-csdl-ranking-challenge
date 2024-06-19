@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script to train Audience Diversity model using BERTopic on Rockwell engagement data
-
 Created on Wed May 22 15:55:15 2024
 
 @author: saumya
@@ -12,31 +10,49 @@ import pandas as pd
 import numpy as np
 import json
 import re
-from bertopic import BERTopic
 import os
+import boto3
+import io
+import psycopg2
+import redis
+import requests
+from bertopic import BERTopic
+
 import configparser
-from osomerank.utils import get_file_logger
+
+negative_engagements = ['comment','downvote','angry']
 
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-logger = get_file_logger(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "log_dir")),
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "training_log_file")),
-    also_print=True,
-)
+s3_region_name = config.get("S3", "S3_REGION_NAME")
+s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+s3_bucket = config.get("S3", "S3_BUCKET")
 
+db_host = config.get("POSTGRES", "host")
+db_port = config.get("POSTGRES", "port")
+db_name = config.get("POSTGRES", "database")
+db_user = config.get("POSTGRES", "user")
+db_password = config.get("POSTGRES", "password")
+
+REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
+
+def redis_client():
+    global memoized_redis_client
+    if memoized_redis_client is None:
+        memoized_redis_client = redis.Redis.from_url(REDIS_DB)
+    return memoized_redis_client
 
 def remove_urls(text, replacement_text=""):
     # Define a regex pattern to match URLs
-    url_pattern = re.compile(r"https?://\S+|www\.\S+")
-
+    url_pattern = re.compile(r'https?://\S+|www\.\S+')
+    
     # Use the sub() method to replace URLs with the specified replacement text
     text_without_urls = url_pattern.sub(replacement_text, text)
-
+    
     return text_without_urls
-
 
 def process_text(text):
     text_urls_removed = remove_urls(text)
@@ -44,81 +60,131 @@ def process_text(text):
         return "NA"
     return text_urls_removed
 
+def get_text_from_db():
+    conn = psycopg2.connect (
+            host = db_host,
+            dbname = db_name,
+            user = db_user,
+            password = db_password,
+            port = db_port,
+        )
+    cur =  conn.cursor()
+    script = """ select session_user_id,type,post_blob from posts """
+    cur.execute(script)
+    res = []
+    res_urls = []
+    for element in cur.fetchall():
+        user_id = element[0]
+        typee = element[1]
+        post_blob = element[2]
+        post = json.loads(post_blob)
+        full_text = ''
+        if 'title' in post.keys():
+            if post['title']:
+                full_text = full_text + post['title']
+        if 'text' in post.keys():
+            if post['text']:
+                full_text = full_text + post['text']
+        if typee not in negative_engagements:
+            res.append((user_id,full_text))
+        if 'embedded_urls' in post.keys():
+            for url in post['embedded_urls']:
+                res_urls.append(url)
+    return res,res_urls
 
-logger.info("Loading Rockwell engagement data..")
-data = pd.read_csv(
-    os.path.join(
-        libs_path, config.get("AUDIENCE_DIVERSITY", "engagement_data_rockwell")
-    )
+def fill_cache_with_url(urls_db,redis_client_obj):
+    for uu in urls_db:
+        try:
+            r = requests.head(uu, allow_redirects=True,timeout=10)
+            redis_client_obj[uu] = r.url
+        except:
+            continue
+
+s3 = boto3.client(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
 )
-if "Unnamed: 0" in data.columns:
-    data = data.drop(columns=["Unnamed: 0"])
+
+s3_resource = boto3.resource(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
+)
+
+redis_client_obj = redis.Redis.from_url(REDIS_DB)
+
+response = s3.get_object(Bucket=s3_bucket, Key='topic_modelling_training_data.csv')
+
+data = pd.read_csv(io.BytesIO(response['Body'].read()))
+
+data_db,urls_db = get_text_from_db()
+
+fill_cache_with_url(urls_db, redis_client_obj)
+
+text_with_partisanship_exp = []
+
+for dd in data_db:
+    if redis_client_obj.get(dd[0]):
+        text_with_partisanship_exp.append({"Text":dd[1],"partisanship":redis_client_obj.get(dd[0])})
+
+for ele in text_with_partisanship_exp:
+    data.loc[len(data)] = ele
+
+data = data.drop_duplicates().reset_index(drop=True)
+#data = data.append(dict(zip(data.columns, text_with_partisanship_exp)), ignore_index=True)
+csv_buffer = io.StringIO()
+data.to_csv(csv_buffer)
+s3_resource.Object(s3_bucket,'topic_modelling_training_data.csv').put(Body=csv_buffer.getvalue())
+
 data = data.dropna().reset_index(drop=True)
 
-logger.info("Preprocessing text..")
-data["Text_processed"] = [process_text(tt) for tt in data["Text"].values.tolist()]
-data = data.drop(data[data["Text_processed"] == "NA"].index).reset_index(drop=True)
+data['Text_processed'] = [process_text(tt) for tt in data['Text'].values.tolist()]
+data = data.drop(data[data['Text_processed'] == 'NA'].index).reset_index(drop=True)
 
-partisanship_map = {
-    "Very conservative": 1,
-    "Somewhat conservative": 2,
-    "Slightly conservative": 3,
-    "Moderate; middle of the road": 4,
-    "Slightly liberal": 5,
-    "Somewhat liberal": 6,
-    "Very liberal": 7,
-}
-data["partisanship_numeric"] = [
-    partisanship_map[pp] for pp in data["partisanship"].values
-]
+partisanship_map = {'Very conservative':1,
+                    'Somewhat conservative':2,
+                    'Slightly conservative':3,
+                    'Moderate; middle of the road':4,
+                    'Slightly liberal':5,
+                    'Somewhat liberal':6,
+                    'Very liberal':7}
 
+data['partisanship_numeric'] = [partisanship_map[pp] for pp in data['partisanship'].values]
 
-logger.info("Training BERTopic model..")
-sentences = data["Text_processed"].values.tolist()
+sentences = data['Text_processed'].values.tolist()
 
 topic_model = BERTopic(verbose=True)
 
 topics, probs = topic_model.fit_transform(sentences)
 
-logger.info("Finished training! ")
 pd_topic_model = topic_model.get_document_info(sentences)
 
-data["topic"] = pd_topic_model["Topic"].values.tolist()
+data['topic'] = pd_topic_model['Topic'].values.tolist()
 
 topic_diversity = {}
-unique_topics = data["topic"].unique()
+unique_topics = data['topic'].unique()
 
 for topic in unique_topics:
     if int(topic) == -1:
         continue
-    partisanship_values = data.loc[data["topic"] == topic][
-        "partisanship_numeric"
-    ].values.tolist()
+    partisanship_values = data.loc[data['topic'] == topic]['partisanship_numeric'].values.tolist()
     topic_diversity[int(topic)] = np.var(partisanship_values)
 
-logger.info("Saving model and topic diversity..")
-
-
-model_outpath = os.path.join(
-    libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_rockwell")
+s3object = s3_resource.Object(s3_bucket, 'BERTopic_diversity.json')
+s3object.put(
+    Body=(bytes(json.dumps(topic_diversity).encode('UTF-8')))
 )
-if not os.path.exists(model_outpath):
-    os.makedirs(model_outpath)
 
 embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
-topic_model.save(
-    model_outpath,
-    serialization="safetensors",
-    save_ctfidf=True,
-    save_embedding_model=embedding_model,
-)
+topic_model.save("models/", serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
 
-logger.info(f"Saved model to {model_outpath}")
+s3.upload_file(Filename="models/ctfidf.safetensors", Bucket=s3_bucket, Key="ctfidf.safetensors")
+s3.upload_file(Filename="models/topic_embeddings.safetensors", Bucket=s3_bucket, Key="topic_embeddings.safetensors")
+s3.upload_file(Filename="models/ctfidf_config.json", Bucket=s3_bucket, Key="ctfidf_config.json")
+s3.upload_file(Filename="models/topics.json", Bucket=s3_bucket, Key="topics.json") 
 
-with open(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")),
-    "w",
-) as outfile:
-    json.dump(topic_diversity, outfile)
-
-logger.info(f"Saved topic diversity!")
+#for filename in os.listdir("models/"):
+#    s3.upload_file("models/" + filename, s3_bucket, filename)
