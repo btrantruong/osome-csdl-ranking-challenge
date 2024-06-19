@@ -15,7 +15,6 @@ import re
 import configparser
 import os
 from collections import defaultdict
-import boto3
 from osomerank.utils import get_file_logger, clean_text
 
 libs_path = os.path.dirname(__file__)
@@ -46,20 +45,25 @@ s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
 s3_bucket = config.get("S3", "S3_BUCKET")
 
 s3 = boto3.resource(
-        service_name='s3',
-        region_name=s3_region_name,
-        aws_access_key_id=s3_access_key,
-        aws_secret_access_key=s3_access_key_secret
+    service_name="s3",
+    region_name=s3_region_name,
+    aws_access_key_id=s3_access_key,
+    aws_secret_access_key=s3_access_key_secret,
 )
 
 my_bucket = s3.Bucket(s3_bucket)
 
-ER_model_folders = ['attracted_sentiment_roberta_reddit','attracted_sentiment_roberta_twitter','toxicity_trigger_roberta_reddit','toxicity_trigger_roberta_twitter']
+ER_model_folders = [
+    "attracted_sentiment_roberta_reddit",
+    "attracted_sentiment_roberta_twitter",
+    "toxicity_trigger_roberta_reddit",
+    "toxicity_trigger_roberta_twitter",
+]
 
 for fol in ER_model_folders:
-    if not os.path.exists('models/ER/'+fol):
-        os.makedirs('models/ER/'+fol)
-    for obj in my_bucket.objects.filter(Prefix = "models/ER/"+fol):
+    if not os.path.exists("models/ER/" + fol):
+        os.makedirs("models/ER/" + fol)
+    for obj in my_bucket.objects.filter(Prefix="models/ER/" + fol):
         my_bucket.download_file(obj.key, obj.key)
 
 # load MODEL_PIPELINES
