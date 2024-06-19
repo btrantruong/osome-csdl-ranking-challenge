@@ -109,4 +109,4 @@ def compute_batch_scores(
         logger.error(f"Task runner threw an error: {e}")
 
     logger.info(f"Finished tasks: {len(finished_tasks)}")
-    return finished_tasks["batch"]
+    return finished_tasks
