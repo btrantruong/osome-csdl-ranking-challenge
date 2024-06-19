@@ -90,7 +90,7 @@ def get_file_logger(log_dir, full_log_path, also_print=False, tqdm=False):
 
     # Configure file handler
     formatter = logging.Formatter(
-        fmt="%(asctime)s-%(name)s-%(levelname)s-%(message)s",
+        fmt="%(asctime)s-worker_%(process)d-%(levelname)s-%(message)s",
         datefmt="%Y-%m-%d_%H:%M:%S",
     )
     fh = logging.FileHandler(f"{full_log_path}")
