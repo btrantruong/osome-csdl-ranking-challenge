@@ -4,14 +4,20 @@ FROM python:3.12
 WORKDIR /app
 
 # Install Poetry
-RUN pip install poetry
+RUN pip install poetry && pip cache purge
 
 # Copy only the necessary files to install dependencies with Poetry
 #COPY pyproject.toml poetry.lock .3
 
 # Install dependencies using Poetry
-RUN --mount=type=bind,source=.,target=/app poetry config virtualenvs.create false \
-    && poetry install --only=main && poetry build --format=wheel --output=/tmp && pip install /tmp/osome*.whl
+RUN --mount=type=bind,source=.,target=/app \
+    poetry config virtualenvs.create false \
+    && poetry install --only=main \
+    && poetry build --format=wheel --output=/tmp \
+    && pip install /tmp/osome*.whl \
+    && poetry cache clear pypi --all \
+    && pip cache purge \
+    && rm -f /tmp/osome*.whl
 
 # Set environment variables
 ENV FLASK_APP=ranking_server.py
