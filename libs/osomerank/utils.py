@@ -2,14 +2,50 @@ import logging
 import os
 import sys
 import json
+import re
+
+
+def clean_text(text):
+
+    text = re.sub(r"(?:\@|https?\://)\S+", "", text)  # remove mentions and URLs
+
+    text = text.lower()  # lowercase the text
+
+    remove_tokens = [
+        "&gt;",
+        "&gt",
+        "&amp;",
+        "&lt;",
+        "#x200B;",
+        "…",
+        "!delta",
+        "δ",
+        "tifu",
+        "cmv:",
+        "cmv",
+    ]
+
+    for t in remove_tokens:  # remove unwanted tokens
+        text = text.replace(t, "")
+
+    text = " ".join(
+        re.split("\s+", text, flags=re.UNICODE)
+    )  # remove unnecessary white space
+
+    text = text.strip()  # strip
+    # return None if text is too short
+    if len(text.strip().split(" ")) <= 3:
+        return "NA"
+
+    return text
+
 
 """ Functions for method profiling """
 import cProfile, pstats, io
 from datetime import datetime
 
+
 # Adapted from https://stackoverflow.com/a/53619707
-
-
 def profileit(func):
     def wrapper(*args, **kwargs):
         datafn = func.__name__ + ".profile"  # Name the data file sensibly

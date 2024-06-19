@@ -187,3 +187,5 @@ scripts/
 app/ranker*.py
 rc-extension/
 report/
+app/job_scheduler/
+app/sanbox_worker/
