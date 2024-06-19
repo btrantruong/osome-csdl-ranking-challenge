@@ -5,7 +5,7 @@ Testing ranking algorithms to improve social cohesion
 
 1. Set up the environment:
 - Make sure you have conda or [miniconda](https://waylonwalker.com/install-miniconda/) installed on your machine. 
-- Change to `osome-server` directory 
+- Change to `osome-csdl-ranking-challenge` directory 
 - Run the command `make` in the terminal — this will create a conda environment and install necessary libraries used by the ranker
 
 2. Set up ranker: 
@@ -19,7 +19,7 @@ python3 app/ranking_server_test.py
 
 3. Run the server on local host:
 - Activate the conda environment: `conda activate`
-- Run the command `python osome-server/app/ranking_server.py`
+- Run the command `python osome-csdl-ranking-challenge/app/ranking_server.py`
 - This would create a server running at http://localhost:5001 in dev mode 
 
 
