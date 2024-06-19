@@ -93,13 +93,23 @@ def sample_data_with_exception():
 #     assert len(scores) == len(data)
 
 
-def test_scoring_jobs_batch_basic(my_celery_app, celery_worker, sample_data):
+def test_har_batch_basic(my_celery_app, celery_worker, sample_data):
     # print(my_celery_app.control.inspect().registered())
     # ^ uncomment to figure out the names of the registered tasks
     # when running pytest from the parent directory of this test,
     # the task name is the following
     data = sample_data
     scores = compute_batch_scores("scorer_worker.tasks.har_batch_scorer", data)
+    assert len(scores) == len(data)
+
+
+def test_ar_batch_basic(my_celery_app, celery_worker, sample_data):
+    # print(my_celery_app.control.inspect().registered())
+    # ^ uncomment to figure out the names of the registered tasks
+    # when running pytest from the parent directory of this test,
+    # the task name is the following
+    data = sample_data
+    scores = compute_batch_scores("scorer_worker.tasks.ar_batch_scorer", data)
     assert len(scores) == len(data)
 
 

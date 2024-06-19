@@ -34,7 +34,7 @@ Models:
 import logging
 import random
 import time
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Callable
 from osomerank import elicited_response
 from pydantic import BaseModel, Field
 from nltk.sentiment import SentimentIntensityAnalyzer
@@ -176,18 +176,16 @@ def har_scorer(self, **kwargs) -> dict[str, Any]:
     return result.model_dump()
 
 
-def do_batch_har_scoring(
-    input: BatchScoreInput,
+def do_batch_scoring(
+    input: BatchScoreInput, prediction_function: Callable[[list[str], str], list[float]]
 ) -> list[dict[str, Any]]:
-    har_scores = elicited_response.har_prediction(
-        [item["text"] for item in input.batch], "twitter"
-    )
+    scores = prediction_function([item["text"] for item in input.batch], "twitter")
     batch = [
         {
             "item_id": item["item_id"],
-            "score": har_score,
+            "score": score,
         }
-        for item, har_score in zip(input.batch, har_scores)
+        for item, score in zip(input.batch, scores)
     ]
 
     return batch
@@ -209,12 +207,44 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
 
     The results are stored in the Celery result backend.
     """
+
     start = time.time()
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
     input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_batch_har_scoring(input), t_start=start, t_end=time.time()
+        batch=do_batch_scoring(input, elicited_response.har_prediction),
+        t_start=start,
+        t_end=time.time(),
+    )
+    return batch_result.model_dump()
+
+
+@app.task(
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
+)
+def ar_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+    """Use pretrained model to perform AR (Affectiv Response) scoring (batch mode)
+
+    Args:
+        **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
+                  thus the input should contain `item_id` and `text`
+
+    Returns:
+        dict[str, Any]: The result of the har scoring task. The result is a dictionary
+                        representation of SentimentScoreOutput
+
+    The results are stored in the Celery result backend.
+    """
+    start = time.time()
+    task_id = self.request.id
+    worker_id = self.request.hostname
+    logger.info(f"Task {task_id} started by {worker_id}")
+    input = BatchScoreInput(**kwargs)
+    batch_result = BatchScoreOutput(
+        batch=do_batch_scoring(input, elicited_response.ar_prediction),
+        t_start=start,
+        t_end=time.time(),
     )
     return batch_result.model_dump()
