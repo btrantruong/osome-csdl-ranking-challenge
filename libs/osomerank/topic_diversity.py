@@ -10,7 +10,7 @@ from bertopic import BERTopic
 import re
 import json
 import traceback
-
+import boto3
 import os
 import configparser
 from osomerank.utils import clean_text
@@ -28,7 +28,18 @@ s3_access_key = config.get("S3", "S3_ACCESS_KEY")
 s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
 s3_bucket = config.get("S3", "S3_BUCKET")
 
+s3 = boto3.client(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
+)
 
+s3.download_file(Filename="models/AD/BERTopic_diversity.json", Bucket=s3_bucket, Key="BERTopic_diversity.json")
+s3.download_file(Filename="models/AD/topic_embeddings.safetensors", Bucket=s3_bucket, Key="ctfidf.safetensors")
+s3.download_file(Filename="models/AD/topic_embeddings.safetensors", Bucket=s3_bucket, Key="topic_embeddings.safetensors")
+s3.download_file(Filename="models/AD/ctfidf_config.json", Bucket=s3_bucket, Key="ctfidf_config.json")
+s3.download_file(Filename="models/AD/topics.json", Bucket=s3_bucket, Key="topics.json")
 
 BERTopic_model_loaded = BERTopic.load(
     os.path.join(
