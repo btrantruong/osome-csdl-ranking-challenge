@@ -15,6 +15,7 @@ import re
 import configparser
 import os
 from collections import defaultdict
+import boto3
 from osomerank.utils import get_file_logger, clean_text
 
 libs_path = os.path.dirname(__file__)
@@ -38,6 +39,26 @@ logger = get_file_logger(
 model_names = ["toxicity_trigger", "attracted_sentiment"]
 platforms = ["twitter", "reddit"]
 
+
+s3_region_name = config.get("S3", "S3_REGION_NAME")
+s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+s3_bucket = config.get("S3", "S3_BUCKET")
+
+s3 = boto3.resource(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
+)
+
+my_bucket = s3.Bucket(s3_bucket)
+
+ER_model_folders = ['attracted_sentiment_roberta_reddit','attracted_sentiment_roberta_twitter','toxicity_trigger_roberta_reddit','toxicity_trigger_roberta_twitter']
+
+for fol in ER_model_folders:
+    for obj in my_bucket.objects.filter(Prefix = fol):
+        my_bucket.download_file(obj.key, 'models/ER/'+obj.key)
 
 # load MODEL_PIPELINES
 MODEL_PIPELINES = defaultdict()

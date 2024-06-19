@@ -21,10 +21,10 @@ WORKDIR /app
 #RUN pip install -r /tmp/requirements.txt
 #COPY data/ /app/
 RUN mkdir -p /app/data
-COPY data/rockwell_engagement_data_with_partisanship_just_text.csv /app/data/
+#COPY data/rockwell_engagement_data_with_partisanship_just_text.csv /app/data/
 RUN mkdir -p /app/models
 #COPY model/ /app/
-COPY requirements.txt /app
+#COPY requirements.txt /app
 COPY config.ini /app
 COPY audience_diversity_BERTopic_Rockwell.py /app
 #RUN pip install -r requirements.txt

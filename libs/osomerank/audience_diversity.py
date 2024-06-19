@@ -14,6 +14,8 @@ import pandas as pd
 import re
 import requests
 import traceback
+import boto3
+import io
 from osomerank.unshorten_URLs_redis import unshorten_main
 
 import os
@@ -59,10 +61,27 @@ libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-# Need to remove domains whih are platform corref from NewsGuard data
-pd_audience_diversity_URLs = pd.read_csv(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
+s3_region_name = config.get("S3", "S3_REGION_NAME")
+s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+s3_bucket = config.get("S3", "S3_BUCKET")
+
+s3 = boto3.client(
+        service_name='s3',
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret
 )
+
+response = s3.get_object(Bucket=s3_bucket, Key='audience_diversity_2022-2023_visitor_level.csv')
+
+# Need to remove domains whih are platform corref from NewsGuard data
+#pd_audience_diversity_URLs = pd.read_csv(
+#    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
+#)
+
+pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response['Body'].read()))
+
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
     pd_audience_diversity_URLs["n_visitors"] >= 10
 ]
