@@ -55,7 +55,7 @@ BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
 def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     logger.info("Received ranking request")
-    redis_client_obj = redis_client()
+    redis_client_obj = redis.Redis.from_url(REDIS_DB)
     if 'survey' in ranking_request.keys():
         redis_client_obj[ranking_request.session.user_id] = ranking_request.survey.ideology
     ranked_results = []
