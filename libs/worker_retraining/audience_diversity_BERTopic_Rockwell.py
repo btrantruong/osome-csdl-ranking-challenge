@@ -138,13 +138,15 @@ def main():
 
     data_db,urls_db = get_text_from_db()
 
-    fill_cache_with_url(urls_db, redis_client_obj)
+    if urls_db:
+        fill_cache_with_url(urls_db, redis_client_obj)
 
     text_with_partisanship_exp = []
 
-    for dd in data_db:
-        if redis_client_obj.get(dd[0]):
-            text_with_partisanship_exp.append({"Text":dd[1],"partisanship":redis_client_obj.get(dd[0])})
+    if data_db:
+        for dd in data_db:
+            if redis_client_obj.get(dd[0]):
+                text_with_partisanship_exp.append({"Text":dd[1],"partisanship":redis_client_obj.get(dd[0])})
 
     for ele in text_with_partisanship_exp:
         data.loc[len(data)] = ele
@@ -159,16 +161,6 @@ def main():
 
     data['Text_processed'] = [process_text(tt) for tt in data['Text'].values.tolist()]
     data = data.drop(data[data['Text_processed'] == 'NA'].index).reset_index(drop=True)
-
-    partisanship_map = {'Very conservative':1,
-                        'Somewhat conservative':2,
-                        'Slightly conservative':3,
-                        'Moderate; middle of the road':4,
-                        'Slightly liberal':5,
-                        'Somewhat liberal':6,
-                        'Very liberal':7}
-
-    data['partisanship_numeric'] = [partisanship_map[pp] for pp in data['partisanship'].values]
 
     sentences = data['Text_processed'].values.tolist()
 
@@ -186,7 +178,7 @@ def main():
     for topic in unique_topics:
         if int(topic) == -1:
             continue
-        partisanship_values = data.loc[data['topic'] == topic]['partisanship_numeric'].values.tolist()
+        partisanship_values = data.loc[data['topic'] == topic]['partisanship'].values.tolist()
         topic_diversity[int(topic)] = np.var(partisanship_values)
 
     s3object = s3_resource.Object(s3_bucket, 'BERTopic_diversity.json')
