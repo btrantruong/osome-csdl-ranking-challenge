@@ -56,8 +56,10 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     logger.info("Received ranking request")
     redis_client_obj = redis.Redis.from_url(REDIS_DB)
-    if 'survey' in ranking_request.keys():
-        redis_client_obj[ranking_request.session.user_id] = ranking_request.survey.ideology
+    if "survey" in ranking_request.keys():
+        redis_client_obj[ranking_request.session.user_id] = (
+            ranking_request.survey.ideology
+        )
     ranked_results = []
     # get the named entities from redis
     result_key = "my_worker:scheduled:top_named_entities"
@@ -144,4 +146,6 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run("ranking_server:app", host="127.0.0.1", port=5001, log_level="debug")
+    uvicorn.run(
+        "ranking_server:app", workers=2, host="127.0.0.1", port=5001, log_level="debug"
+    )
