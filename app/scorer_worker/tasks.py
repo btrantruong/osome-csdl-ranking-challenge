@@ -52,31 +52,31 @@ TIME_LIMIT_SECONDS = 4
 
 
 class SentimentScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
+    id: str = Field(description="The ID of the item to score")
     text: str = Field(description="The body of the post for scoring")
 
 
 class BatchScoreInput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id' and 'text' keys for batch scoring"
+        description="A list of dictionaries, each with 'id' and 'text' keys for batch scoring"
     )
 
 
 class AudienceDiversityInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
+    id: str = Field(description="The ID of the item to score")
     text: str = Field(description="The body of the post for scoring")
     url: str = Field(description="The URL of the post for scoring")
 
 
 class AudienceDiversityBatchInput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id', 'text', 'embedded_urls' keys for batch scoring"
+        description="A list of dictionaries, each with 'id', 'text', 'embedded_urls' keys for batch scoring"
     )
     platform: str = Field(description="The platform of the posts for scoring")
 
 
 class ScoreOutput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
+    id: str = Field(description="The ID of the item to score")
     score: float = Field(description="Numerical score")
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
@@ -84,7 +84,7 @@ class ScoreOutput(BaseModel):
 
 class BatchScoreOutput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id' and 'text' keys for batch scoring"
+        description="A list of dictionaries, each with 'id' and 'text' keys for batch scoring"
     )
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
@@ -114,7 +114,7 @@ class RandomScoreInput(BaseModel):
 def do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
     har_score = elicited_response.har_prediction([input.text], "twitter")
     return SentimentScoreOutput(
-        item_id=input.item_id,
+        id=input.id,
         score=har_score,
     )
 
@@ -127,7 +127,7 @@ def har_scorer(self, **kwargs) -> dict[str, Any]:
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
         dict[str, Any]: The result of the har scoring task. The result is a dictionary
@@ -149,10 +149,11 @@ def har_scorer(self, **kwargs) -> dict[str, Any]:
 def do_batch_scoring(
     input: BatchScoreInput, prediction_function: Callable[[list[str], str], list[float]]
 ) -> list[dict[str, Any]]:
+    a = input.batch
     scores = prediction_function([item["text"] for item in input.batch], "twitter")
     batch = [
         {
-            "item_id": item["item_id"],
+            "id": item["id"],
             "score": score,
         }
         for item, score in zip(input.batch, scores)
@@ -169,7 +170,7 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
         dict[str, Any]: The result of the har scoring task. The result is a dictionary
@@ -199,7 +200,7 @@ def ar_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
         dict[str, Any]: The result of the har scoring task. The result is a dictionary
@@ -227,7 +228,7 @@ def do_ad_td_batch_scoring(
     scores = prediction_function([item for item in input.batch], input.platform)
     batch = [
         {
-            "item_id": item["item_id"],
+            "id": item["id"],
             "score": score,
         }
         for item, score in zip(input.batch, scores)
@@ -244,7 +245,7 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
         dict[str, Any]: The result of the ad scoring task. The result is a dictionary
@@ -274,7 +275,7 @@ def td_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
         dict[str, Any]: The result of the ad scoring task. The result is a dictionary
