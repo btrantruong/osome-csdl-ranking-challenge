@@ -56,6 +56,7 @@ def issue_request(platform, url, results_df):
 
     session = requests.Session()
     response = session.post(f"{url}/rank", json=jsonable_encoder(request))
+    end_time = time.time()
     session.close()
     if response.status_code != 200:
         raise Exception(
