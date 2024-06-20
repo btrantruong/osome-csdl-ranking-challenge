@@ -16,7 +16,7 @@ import requests
 import traceback
 import boto3
 import io
-from osomerank.unshorten_URLs_redis import unshorten_main
+from unshorten_fast import unshorten
 
 import os
 import configparser
@@ -150,7 +150,7 @@ def ad_prediction(feed_posts, sm_type):
                                 urls_available.append(url_from_text)
 
         if urls_available:
-            urls_available_unshortened = unshorten_main(urls_available)
+            urls_available_unshortened = unshorten(urls_available, cache_redis=True)
             # urls_available_unshortened = process_URL_multiple(urls_available)
         else:
             urls_available_unshortened = []
