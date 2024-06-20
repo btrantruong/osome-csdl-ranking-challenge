@@ -2,7 +2,7 @@
 .ONESHELL:
 
 SHELL=/bin/bash
-PROJ_NAME=osomerank2
+PROJ_NAME=dante
 ENV_PATH=$$(conda info --base)
 CONDA_ACTIVATE=source $$(conda info --base)/etc/profile.d/conda.sh ; conda activate $(PROJ_NAME)
 
@@ -15,7 +15,5 @@ create_conda_env:
 	
 install_modules:
 	$(CONDA_ACTIVATE)
-	echo "Install prediction modules"
+	echo "Install dante prediction modules"
 	pip install -e ./libs/
-	echo "Install pydantic models for the PRC API schema"
-	pip install -e ./module/src/
