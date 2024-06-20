@@ -15,6 +15,7 @@ import re
 import configparser
 import os
 from collections import defaultdict
+import boto3
 from osomerank.utils import get_file_logger, clean_text
 
 libs_path = os.path.dirname(__file__)
@@ -61,10 +62,8 @@ ER_model_folders = [
 ]
 
 for fol in ER_model_folders:
-    if not os.path.exists("models/ER/" + fol):
-        os.makedirs("models/ER/" + fol)
-    for obj in my_bucket.objects.filter(Prefix="models/ER/" + fol):
-        my_bucket.download_file(obj.key, obj.key)
+    for obj in my_bucket.objects.filter(Prefix=fol):
+        my_bucket.download_file(obj.key, "models/ER/" + obj.key)
 
 # load MODEL_PIPELINES
 MODEL_PIPELINES = defaultdict()

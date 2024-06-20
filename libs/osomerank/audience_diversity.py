@@ -14,6 +14,8 @@ import pandas as pd
 import re
 import requests
 import traceback
+import boto3
+import io
 from osomerank.unshorten_URLs_redis import unshorten_main
 
 import os
@@ -72,13 +74,16 @@ s3 = boto3.client(
 )
 
 response = s3.get_object(
-    Bucket=s3_bucket, Key="data/audience_diversity_2022-2023_visitor_level.csv"
+    Bucket=s3_bucket, Key="audience_diversity_2022-2023_visitor_level.csv"
 )
 
 # Need to remove domains whih are platform corref from NewsGuard data
-pd_audience_diversity_URLs = pd.read_csv(
-    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
-)
+# pd_audience_diversity_URLs = pd.read_csv(
+#    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
+# )
+
+pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response["Body"].read()))
+
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
     pd_audience_diversity_URLs["n_visitors"] >= 10
 ]
