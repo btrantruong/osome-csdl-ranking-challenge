@@ -132,7 +132,7 @@ def main():
 
     redis_client_obj = redis.Redis.from_url(REDIS_DB)
 
-    response = s3.get_object(Bucket=s3_bucket, Key='topic_modelling_training_data.csv')
+    response = s3.get_object(Bucket=s3_bucket, Key='data/topic_modelling_training_data.csv')
 
     data = pd.read_csv(io.BytesIO(response['Body'].read()))
 
@@ -155,7 +155,7 @@ def main():
     #data = data.append(dict(zip(data.columns, text_with_partisanship_exp)), ignore_index=True)
     csv_buffer = io.StringIO()
     data.to_csv(csv_buffer)
-    s3_resource.Object(s3_bucket,'topic_modelling_training_data.csv').put(Body=csv_buffer.getvalue())
+    s3_resource.Object(s3_bucket,'data/topic_modelling_training_data.csv').put(Body=csv_buffer.getvalue())
 
     data = data.dropna().reset_index(drop=True)
 
@@ -181,7 +181,7 @@ def main():
         partisanship_values = data.loc[data['topic'] == topic]['partisanship'].values.tolist()
         topic_diversity[int(topic)] = np.var(partisanship_values)
 
-    s3object = s3_resource.Object(s3_bucket, 'BERTopic_diversity.json')
+    s3object = s3_resource.Object(s3_bucket, 'models/AD_rockwell/BERTopic_diversity.json')
     s3object.put(
         Body=(bytes(json.dumps(topic_diversity).encode('UTF-8')))
     )
@@ -189,10 +189,10 @@ def main():
     embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
     topic_model.save("models/", serialization="safetensors", save_ctfidf=True, save_embedding_model=embedding_model)
 
-    s3.upload_file(Filename="models/ctfidf.safetensors", Bucket=s3_bucket, Key="ctfidf.safetensors")
-    s3.upload_file(Filename="models/topic_embeddings.safetensors", Bucket=s3_bucket, Key="topic_embeddings.safetensors")
-    s3.upload_file(Filename="models/ctfidf_config.json", Bucket=s3_bucket, Key="ctfidf_config.json")
-    s3.upload_file(Filename="models/topics.json", Bucket=s3_bucket, Key="topics.json")
+    s3.upload_file(Filename="models/ctfidf.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf.safetensors")
+    s3.upload_file(Filename="models/topic_embeddings.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/topic_embeddings.safetensors")
+    s3.upload_file(Filename="models/ctfidf_config.json", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf_config.json")
+    s3.upload_file(Filename="models/topics.json", Bucket=s3_bucket, Key="models/AD_rockwell/topics.json")
 
 if __name__ == '__main__':
     main()

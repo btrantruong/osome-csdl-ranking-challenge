@@ -57,8 +57,10 @@ my_bucket = s3.Bucket(s3_bucket)
 ER_model_folders = ['attracted_sentiment_roberta_reddit','attracted_sentiment_roberta_twitter','toxicity_trigger_roberta_reddit','toxicity_trigger_roberta_twitter']
 
 for fol in ER_model_folders:
-    for obj in my_bucket.objects.filter(Prefix = fol):
-        my_bucket.download_file(obj.key, 'models/ER/'+obj.key)
+    if not os.path.exists('models/ER/'+fol):
+        os.makedirs('models/ER/'+fol)
+    for obj in my_bucket.objects.filter(Prefix = "models/ER/"+fol):
+        my_bucket.download_file(obj.key, obj.key)
 
 # load MODEL_PIPELINES
 MODEL_PIPELINES = defaultdict()
