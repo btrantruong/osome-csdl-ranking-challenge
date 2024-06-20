@@ -42,6 +42,7 @@ def generate_items(platform):
         selected_rows[platform] = selected_indices
 
     content_items = [ContentItem.model_validate(item_df) for item_df in next_row]
+    # a = content_items[0].__fields__.keys()
     return content_items
 
 
@@ -70,17 +71,33 @@ def test_har_batch_basic(my_celery_app, celery_worker, sample_data_facebook):
     assert len(scores) == len(data)
 
 
-def test_ar_batch_basic(my_celery_app, celery_worker, sample_data_facebook):
+def test_har_reddit(my_celery_app, celery_worker, sample_data_reddit):
     # print(my_celery_app.control.inspect().registered())
     # ^ uncomment to figure out the names of the registered tasks
     # when running pytest from the parent directory of this test,
     # the task name is the following
+    data = jsonable_encoder(sample_data_reddit)
+    scores = compute_batch_scores("scorer_worker.tasks.har_batch_scorer", data)
+    assert len(scores) == len(data)
+
+
+def test_har_twitter(my_celery_app, celery_worker, sample_data_twitter):
+    # print(my_celery_app.control.inspect().registered())
+    # ^ uncomment to figure out the names of the registered tasks
+    # when running pytest from the parent directory of this test,
+    # the task name is the following
+    data = jsonable_encoder(sample_data_twitter)
+    scores = compute_batch_scores("scorer_worker.tasks.har_batch_scorer", data)
+    assert len(scores) == len(data)
+
+
+def test_ad_facebook(my_celery_app, celery_worker, sample_data_facebook):
     data = jsonable_encoder(sample_data_facebook)
     scores = compute_batch_scores("scorer_worker.tasks.ad_batch_scorer", data)
     assert len(scores) == len(data)
 
 
-def test_ar_batch_basic(my_celery_app, celery_worker, sample_data_facebook):
-    data = jsonable_encoder(sample_data_facebook)
+def test_td_twitter(my_celery_app, celery_worker, sample_data_twitter):
+    data = jsonable_encoder(sample_data_twitter)
     scores = compute_batch_scores("scorer_worker.tasks.td_batch_scorer", data)
     assert len(scores) == len(data)
