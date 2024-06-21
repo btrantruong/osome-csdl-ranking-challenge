@@ -35,34 +35,43 @@ s3 = boto3.client(
     aws_secret_access_key=s3_access_key_secret,
 )
 
-s3.download_file(
-    Filename="models/AD_rockwell/BERTopic_diversity.json",
-    Bucket=s3_bucket,
-    Key="BERTopic_diversity.json",
+
+def download_s3_folder(bucket_name, s3_folder, local_dir=None):
+    """
+    Download the contents of a folder directory (recursive)
+    Args:
+        bucket_name: the name of the s3 bucket
+        s3_folder: the folder path in the s3 bucket
+        local_dir: a relative or absolute directory path in the local file system
+    """
+    bucket = s3.Bucket(bucket_name)
+    for obj in bucket.objects.filter(Prefix=s3_folder):
+        target = (
+            obj.key
+            if local_dir is None
+            else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
+        )
+        if not os.path.exists(os.path.dirname(target)):
+            os.makedirs(os.path.dirname(target))
+        if obj.key[-1] == "/":
+            continue
+        bucket.download_file(obj.key, target)
+
+
+model_dir = os.path.join(
+    libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_dir")
 )
-s3.download_file(
-    Filename="models/AD_rockwell/topic_embeddings.safetensors",
-    Bucket=s3_bucket,
-    Key="ctfidf.safetensors",
-)
-s3.download_file(
-    Filename="models/AD_rockwell/topic_embeddings.safetensors",
-    Bucket=s3_bucket,
-    Key="topic_embeddings.safetensors",
-)
-s3.download_file(
-    Filename="models/AD_rockwell/ctfidf_config.json",
-    Bucket=s3_bucket,
-    Key="ctfidf_config.json",
-)
-s3.download_file(
-    Filename="models/AD_rockwell/topics.json", Bucket=s3_bucket, Key="topics.json"
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
+
+download_s3_folder(
+    bucket_name=s3_bucket,
+    s3_folder=config.get("AUDIENCE_DIVERSITY", "audience_diversity_dir"),
+    local_dir=model_dir,
 )
 
 BERTopic_model_loaded = BERTopic.load(
-    os.path.join(
-        libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_BERTtopic")
-    )
+    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_dir"))
 )
 # BERTopic_model_loaded = BERTopic.load()
 
