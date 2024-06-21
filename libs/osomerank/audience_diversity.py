@@ -74,16 +74,19 @@ s3 = boto3.client(
     aws_secret_access_key=s3_access_key_secret,
 )
 
-response = s3.get_object(
-    Bucket=s3_bucket, Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
+ad_model_path = os.path.join(
+    libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
 )
+if not os.path.exists(ad_model_path):
+    response = s3.get_object(
+        Bucket=s3_bucket,
+        Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"),
+    )
 
-# Need to remove domains whih are platform corref from NewsGuard data
-# pd_audience_diversity_URLs = pd.read_csv(
-#    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
-# )
-
-pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response["Body"].read()))
+    pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response["Body"].read()))
+else:
+    # TODO: Need to remove domains whih are platform corref from NewsGuard data
+    pd_audience_diversity_URLs = pd.read_csv(ad_model_path)
 
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
     pd_audience_diversity_URLs["n_visitors"] >= 10
