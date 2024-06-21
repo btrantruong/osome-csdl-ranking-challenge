@@ -59,8 +59,9 @@ platform_urls = [
 
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+config.read(os.path.join(libs_path, "config.ini"))
 
+# S3 config
 s3_region_name = config.get("S3", "S3_REGION_NAME")
 s3_access_key = config.get("S3", "S3_ACCESS_KEY")
 s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
@@ -74,7 +75,7 @@ s3 = boto3.client(
 )
 
 response = s3.get_object(
-    Bucket=s3_bucket, Key="audience_diversity_2022-2023_visitor_level.csv"
+    Bucket=s3_bucket, Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
 )
 
 # Need to remove domains whih are platform corref from NewsGuard data

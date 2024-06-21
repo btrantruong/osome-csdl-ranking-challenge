@@ -20,17 +20,17 @@ from osomerank.utils import get_file_logger, clean_text
 
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+config.read(os.path.join(libs_path, "config.ini"))
 
 from datetime import datetime
 
 formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
 
 logger = get_file_logger(
-    os.path.join(libs_path, config.get("ELICITED_RESPONSE", "log_dir")),
+    os.path.join(libs_path, config.get("LOGGING", "log_dir")),
     os.path.join(
         libs_path,
-        config.get("ELICITED_RESPONSE", "log_dir"),
+        config.get("LOGGING", "log_dir"),
         f"rank_er__{formatted_time}.log",
     ),
     also_print=True,
@@ -39,7 +39,7 @@ logger = get_file_logger(
 model_names = ["toxicity_trigger", "attracted_sentiment"]
 platforms = ["twitter", "reddit"]
 
-
+# S3 config
 s3_region_name = config.get("S3", "S3_REGION_NAME")
 s3_access_key = config.get("S3", "S3_ACCESS_KEY")
 s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
@@ -54,16 +54,15 @@ s3 = boto3.resource(
 
 my_bucket = s3.Bucket(s3_bucket)
 
-ER_model_folders = [
-    "attracted_sentiment_roberta_reddit",
-    "attracted_sentiment_roberta_twitter",
-    "toxicity_trigger_roberta_reddit",
-    "toxicity_trigger_roberta_twitter",
-]
-
-for fol in ER_model_folders:
-    for obj in my_bucket.objects.filter(Prefix=fol):
-        my_bucket.download_file(obj.key, "models/ER/" + obj.key)
+# Download and load models from S3
+ER_models = config.options("ELICITED_RESPONSE")
+for model in ER_models:
+    model_dir = os.path.join(libs_path, config.get("ELICITED_RESPONSE", model))
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+    if not os.listdir(model_dir):
+        for obj in my_bucket.objects.filter(Prefix=model):
+            my_bucket.download_file(obj.key, obj.key)
 
 # load MODEL_PIPELINES
 MODEL_PIPELINES = defaultdict()
