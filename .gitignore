@@ -201,3 +201,4 @@ app/sandbox_worker/
 # Sensitive data
 libs/osomerank/data
 libs/osomerank/config_confidential.ini
+*.mk
