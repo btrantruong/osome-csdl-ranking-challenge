@@ -43,17 +43,64 @@ def redis_client():
     return memoized_redis_client
 
 
-## Helper: normalization for HaR scores
-BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
-
-
 def execute_task(task_name, post_data, platform):
     return compute_batch_scores(task_name, post_data, platform)
 
 
-# Items are ordered as follows:
-# 1. An ordered list of Non-HaR (low-harm) posts are further ranked by audience diversity, break tie by AR score (sentiment)
-# 2. An ordered list of HaR (harmful) posts are ranked by AR score (sentiment)
+def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
+    """
+    Combine scores into a single list of dictionaries.
+    Items are ordered as follows:
+    1. non_har_posts: an ordered list of Non-HaR (low-harm) posts. These posts are further ranked by audience diversity, break tie by AR score (sentiment)
+    2. har_posts: an ordered list of HaR (harmful). These posts are further ranked by AR score (sentiment)
+    Args:
+        har_scores, ar_scores, ad_scores, td_scores (list of dict): list of dictionaries, each with 'id' and 'score' keys for batch scoring"
+
+    Returns:
+        (list of dict): a reordered list of dictionaries
+    """
+    ## Helper: normalization for HaR scores
+    BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+
+    ranked_results = []
+    non_har_posts = []  # these posts are ok
+    har_posts = []  # these posts elicit toxicity
+
+    for item in post_data:
+        item_id = item["id"]
+        har_score = har_scores[item_id]
+        ar_score = ar_scores[item_id]
+        har_normalized = bisect(BOUNDARIES, har_scores[item_id])
+        ad_score = ad_link_scores[item_id] if ad_score != -1000 else td_scores[item_id]
+
+        processed_item = {
+            "id": item["id"],
+            "text": item["text"],
+            "audience_diversity": ad_score,
+            "har_score": har_score,
+            "ar_score": ar_score,
+            "har_normalized": har_normalized,  # {0,1,2,3,4}
+        }
+
+        if har_normalized == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
+            har_posts.append(processed_item)
+        else:  # posts that have interval 0 or 1: non-hars
+            non_har_posts.append(processed_item)
+
+    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
+    multisort(
+        non_har_posts,
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
+    )
+    multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
+
+    # concat the two lists, prioritizing non-HaR posts
+    # ranked_results = non_har_posts + har_posts
+    ranked_results = non_har_posts + har_posts
+
+    return ranked_results
+
+
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
 
@@ -102,41 +149,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ad_link_scores = scores["ad_scores"]
     td_scores = scores["td_scores"]
 
-    ranked_results = []
-    non_har_posts = []  # these posts are ok
-    har_posts = []  # these posts elicit toxicity
-
-    for item in post_data:
-        item_id = item["id"]
-        har_score = har_scores[item_id]
-        ar_score = ar_scores[item_id]
-        har_normalized = bisect(BOUNDARIES, har_scores[item_id])
-        ad_score = ad_link_scores[item_id] if ad_score != -1000 else td_scores[item_id]
-
-        processed_item = {
-            "id": item["id"],
-            "text": item["text"],
-            "audience_diversity": ad_score,
-            "har_score": har_score,
-            "ar_score": ar_score,
-            "har_normalized": har_normalized,  # {0,1,2,3,4}
-        }
-
-        if har_normalized == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
-            har_posts.append(processed_item)
-        else:  # posts that have interval 0 or 1: non-hars
-            non_har_posts.append(processed_item)
-
-    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
-    multisort(
-        non_har_posts,
-        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
-    )
-    multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
-
-    # concat the two lists, prioritizing non-HaR posts
-    # ranked_results = non_har_posts + har_posts
-    ranked_results = non_har_posts + har_posts
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
 
