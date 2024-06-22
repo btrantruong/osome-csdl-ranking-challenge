@@ -14,9 +14,7 @@ from ranking_challenge.response import RankingResponse
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-from scorer_worker.scorer_basic import compute_scores
-
+from scorer_worker.scorer_basic import compute_batch_scores
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,61 +58,44 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         redis_client_obj[ranking_request.session.user_id] = (
             ranking_request.survey.ideology
         )
-    ranked_results = []
-    # get the named entities from redis
-    result_key = "my_worker:scheduled:top_named_entities"
 
+    platform = ranking_request.session.platform
+    post_items = ranking_request.items
+    ranked_results = []
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
 
     # preprocess posts: clean text
-    post_texts = [
-        {"item_id": x.id, "text": clean_text(x.text)} for x in ranking_request.items
+    post_data = [
+        {"id": x["id"], "text": clean_text(x["text"]), "urls": x["embedded_urls"]}
+        for x in post_items
     ]
 
-    har_scores = compute_scores("scorer_worker.tasks.har_scorer", post_texts)
-    ar_scores = compute_scores("scorer_worker.tasks.ar_scorer", post_texts)
-
-    # Default to Twitter for now
-
-    post_data = {
-        "batch": [
-            {"item_id": x.id, "text": x.text, "embedded_urls": x.embedded_urls}
-            for x in ranking_request.items
-        ],
-        "platform": "twitter",
-    }
-    ad_link_scores = compute_scores("scorer_worker.tasks.har_scorer", post_data)
-    td_scores = compute_scores("scorer_worker.tasks.har_scorer", post_data)
-
-    # Note: Another way is to score each item in a request with ThreadPoolExecutor. But this might take longer
-
-    # with ThreadPoolExecutor() as executor:
-
-    #     future = executor.submit(
-    #         compute_scores, "scorer_worker.tasks.har_scorer", data
-    #     )
-    #     try:
-    #         # logger.info("Submitting score computation task")
-    #         scoring_result = future.result(timeout=0.5)
-    #     except TimeoutError:
-    #         logger.error("Timed out waiting for score results")
-    #     except Exception as e:
-    #         logger.error(f"Error computing scores: {e}")
-    #     else:
-    #         logger.info(f"Computed scores: {scoring_result}")
+    # get different scores
+    har_scores = compute_batch_scores(
+        "scorer_worker.tasks.har_batch_scorer", post_data, platform
+    )
+    ar_scores = compute_batch_scores(
+        "scorer_worker.tasks.ar_batch_scorer", post_data, platform
+    )
+    ad_link_scores = compute_batch_scores(
+        "scorer_worker.tasks.ad_batch_scorer", post_data, platform
+    )
+    td_scores = compute_batch_scores(
+        "scorer_worker.tasks.td_batch_scorer", post_data, platform
+    )
 
     for item in post_texts:
-        item_id = item["item_id"]
+        item_id = item["id"]
         har_score = har_scores[item_id]
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_scores[item_id])
         ad_score = ad_link_scores[item_id] if ad_score != -1000 else td_scores[item_id]
 
         processed_item = {
-            "id": item["item_id"],
+            "id": item["id"],
             "text": item["text"],
-            # "audience_diversity": ad_score,
+            "audience_diversity": ad_score,
             "har_score": har_score,
             "ar_score": ar_score,
             "har_normalized": har_normalized,  # {0,1,2,3,4}
@@ -126,13 +107,9 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
             non_har_posts.append(processed_item)
 
     # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
-    # multisort(
-    #     non_har_posts,
-    #     [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
-    # )
     multisort(
         non_har_posts,
-        [("har_normalized", False), ("ar_score", True)],
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
 
