@@ -61,24 +61,25 @@ libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(libs_path, "config.ini"))
 
-# S3 config
-s3_region_name = config.get("S3", "S3_REGION_NAME")
-s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-s3_bucket = config.get("S3", "S3_BUCKET")
-
-s3 = boto3.client(
-    service_name="s3",
-    region_name=s3_region_name,
-    aws_access_key_id=s3_access_key,
-    aws_secret_access_key=s3_access_key_secret,
-)
-
 ad_model_path = os.path.join(
     libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
 )
+# Download and load models from S3
 if not os.path.exists(ad_model_path):
+    # S3 config
+    s3_region_name = config.get("S3", "S3_REGION_NAME")
+    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    s3_bucket = config.get("S3", "S3_BUCKET")
+
+    s3 = boto3.client(
+        service_name="s3",
+        region_name=s3_region_name,
+        aws_access_key_id=s3_access_key,
+        aws_secret_access_key=s3_access_key_secret,
+    )
     response = s3.get_object(
+        Filename=ad_model_path,
         Bucket=s3_bucket,
         Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"),
     )
