@@ -75,7 +75,7 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
 
 
 def compute_batch_scores(
-    task_name: str, input: list[dict[str, Any]]
+    task_name: str, input: list[dict[str, Any]], platform: str
 ) -> list[dict[str, Any]]:
     """Task dispatcher/manager.
 
@@ -89,7 +89,9 @@ def compute_batch_scores(
 
     tasks = [
         celery_app.signature(
-            task_name, kwargs={"batch": input}, options={"task_id": uuid()}
+            task_name,
+            kwargs={"batch": input, "platform": platform},
+            options={"task_id": uuid()},
         )
     ]
 

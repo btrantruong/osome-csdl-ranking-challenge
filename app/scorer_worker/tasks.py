@@ -47,8 +47,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-KILL_DEADLINE_SECONDS = 10
-TIME_LIMIT_SECONDS = 4
+KILL_DEADLINE_SECONDS = 20
+TIME_LIMIT_SECONDS = 20
 
 
 class SentimentScoreInput(BaseModel):
@@ -58,21 +58,9 @@ class SentimentScoreInput(BaseModel):
 
 class BatchScoreInput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'id' and 'text' keys for batch scoring"
+        description="A list of dictionaries, each with 'id', 'text', 'urls' and 'platform' keys for batch scoring"
     )
-
-
-class AudienceDiversityInput(BaseModel):
-    id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-    url: str = Field(description="The URL of the post for scoring")
-
-
-class AudienceDiversityBatchInput(BaseModel):
-    batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'id', 'text', 'embedded_urls' keys for batch scoring"
-    )
-    platform: str = Field(description="The platform of the posts for scoring")
+    platform: str = Field(description="The platform of the items to score")
 
 
 class ScoreOutput(BaseModel):
@@ -150,7 +138,7 @@ def do_batch_scoring(
     input: BatchScoreInput, prediction_function: Callable[[list[str], str], list[float]]
 ) -> list[dict[str, Any]]:
     a = input.batch
-    scores = prediction_function([item["text"] for item in input.batch], "twitter")
+    scores = prediction_function([item["text"] for item in input.batch], input.platform)
     batch = [
         {
             "id": item["id"],
@@ -189,7 +177,7 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
+    return batch_result.batch
 
 
 @app.task(
@@ -218,23 +206,7 @@ def ar_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
-
-
-def do_ad_td_batch_scoring(
-    input: AudienceDiversityBatchInput,
-    prediction_function: Callable[[list[str], str], list[float]],
-) -> list[dict[str, Any]]:
-    scores = prediction_function([item for item in input.batch], input.platform)
-    batch = [
-        {
-            "id": item["id"],
-            "score": score,
-        }
-        for item, score in zip(input.batch, scores)
-    ]
-
-    return batch
+    return batch_result.batch
 
 
 @app.task(
@@ -258,40 +230,40 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
-    input = AudienceDiversityBatchInput(**kwargs)
+    input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_ad_td_batch_scoring(input, audience_diversity.ad_prediction),
+        batch=do_batch_scoring(input, audience_diversity.ad_prediction),
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
+    return batch_result.batch
 
 
-@app.task(
-    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
-)
-def td_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
-    """Use pretrained model to perform Topic diversity scoring (batch mode)
+# @app.task(
+#     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
+# )
+# def td_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+#     """Use pretrained model to perform Topic diversity scoring (batch mode)
 
-    Args:
-        **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `id` and `text`
+#     Args:
+#         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
+#                   thus the input should contain `id` and `text`
 
-    Returns:
-        dict[str, Any]: The result of the ad scoring task. The result is a dictionary
-                        representation of SentimentScoreOutput
+#     Returns:
+#         dict[str, Any]: The result of the ad scoring task. The result is a dictionary
+#                         representation of SentimentScoreOutput
 
-    The results are stored in the Celery result backend.
-    """
+#     The results are stored in the Celery result backend.
+#     """
 
-    start = time.time()
-    task_id = self.request.id
-    worker_id = self.request.hostname
-    logger.info(f"Task {task_id} started by {worker_id}")
-    input = AudienceDiversityBatchInput(**kwargs)
-    batch_result = BatchScoreOutput(
-        batch=do_ad_td_batch_scoring(input, audience_diversity.td_prediction),
-        t_start=start,
-        t_end=time.time(),
-    )
-    return batch_result.model_dump()
+#     start = time.time()
+#     task_id = self.request.id
+#     worker_id = self.request.hostname
+#     logger.info(f"Task {task_id} started by {worker_id}")
+#     input = BatchScoreInput(**kwargs)
+#     batch_result = BatchScoreOutput(
+#         batch=do_batch_scoring(input, topic_diversity.td_prediction),
+#         t_start=start,
+#         t_end=time.time(),
+#     )
+#     return batch_result.batch
