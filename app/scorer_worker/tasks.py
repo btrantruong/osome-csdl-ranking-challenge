@@ -35,7 +35,7 @@ import logging
 import random
 import time
 from typing import Any, List, Dict, Callable
-from osomerank import elicited_response, audience_diversity
+from osomerank import elicited_response, audience_diversity, topic_diversity
 from pydantic import BaseModel, Field
 from scorer_worker.celery_app import app
 
@@ -225,31 +225,31 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     return batch_result.batch
 
 
-# @app.task(
-#     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
-# )
-# def td_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
-#     """Use pretrained model to perform Topic diversity scoring (batch mode)
+@app.task(
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
+)
+def td_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
+    """Use pretrained model to perform Topic diversity scoring (batch mode)
 
-#     Args:
-#         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-#                   thus the input should contain `id` and `text`
+    Args:
+        **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
+                  thus the input should contain `id` and `text`
 
-#     Returns:
-#         dict[str, float]: The result of the ad scoring task. The result is a dictionary
-#                         representation of SentimentScoreOutput
+    Returns:
+        dict[str, float]: The result of the ad scoring task. The result is a dictionary
+                        representation of SentimentScoreOutput
 
-#     The results are stored in the Celery result backend.
-#     """
+    The results are stored in the Celery result backend.
+    """
 
-#     start = time.time()
-#     task_id = self.request.id
-#     worker_id = self.request.hostname
-#     logger.info(f"Task {task_id} started by {worker_id}")
-#     input = BatchScoreInput(**kwargs)
-#     batch_result = BatchScoreOutput(
-#         batch=do_batch_scoring(input, topic_diversity.td_prediction),
-#         t_start=start,
-#         t_end=time.time(),
-#     )
-#     return batch_result.batch
+    start = time.time()
+    task_id = self.request.id
+    worker_id = self.request.hostname
+    logger.info(f"Task {task_id} started by {worker_id}")
+    input = BatchScoreInput(**kwargs)
+    batch_result = BatchScoreOutput(
+        batch=do_batch_scoring(input, topic_diversity.td_prediction),
+        t_start=start,
+        t_end=time.time(),
+    )
+    return batch_result.batch

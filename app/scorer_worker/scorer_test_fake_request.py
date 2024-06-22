@@ -95,7 +95,7 @@ def test_har_batch(my_celery_app, celery_worker, sample_data_facebook):
         "scorer_worker.tasks.ad_batch_scorer", post_data, platform
     )
     assert len(ad_link_scores) == len(post_data)
-    # td_scores = compute_batch_scores(
-    #     "scorer_worker.tasks.td_batch_scorer", post_data, platform
-    # )
-    # assert len(td_scores) == len(post_data)
+    td_scores = compute_batch_scores(
+        "scorer_worker.tasks.td_batch_scorer", post_data, platform
+    )
+    assert len(td_scores) == len(post_data)
