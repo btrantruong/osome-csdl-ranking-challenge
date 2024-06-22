@@ -15,6 +15,7 @@ import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from scorer_worker.scorer_basic import compute_batch_scores
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,6 +47,10 @@ def redis_client():
 BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
 
 
+def execute_task(task_name, post_data, platform):
+    return compute_batch_scores(task_name, post_data, platform)
+
+
 # Items are ordered as follows:
 # 1. An ordered list of Non-HaR (low-harm) posts are further ranked by audience diversity, break tie by AR score (sentiment)
 # 2. An ordered list of HaR (harmful) posts are ranked by AR score (sentiment)
@@ -61,9 +66,6 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     platform = ranking_request.session.platform
     post_items = ranking_request.items
-    ranked_results = []
-    non_har_posts = []  # these posts are ok
-    har_posts = []  # these posts elicit toxicity
 
     # preprocess posts: clean text
     post_data = [
@@ -72,20 +74,39 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ]
 
     # get different scores
-    har_scores = compute_batch_scores(
-        "scorer_worker.tasks.har_batch_scorer", post_data, platform
-    )
-    ar_scores = compute_batch_scores(
-        "scorer_worker.tasks.ar_batch_scorer", post_data, platform
-    )
-    ad_link_scores = compute_batch_scores(
-        "scorer_worker.tasks.ad_batch_scorer", post_data, platform
-    )
-    td_scores = compute_batch_scores(
-        "scorer_worker.tasks.td_batch_scorer", post_data, platform
-    )
+    tasks = {
+        "har_scores": (
+            "scorer_worker.tasks.har_batch_scorer",
+            post_data,
+            platform,
+        ),
+        "ar_scores": ("scorer_worker.tasks.ar_batch_scorer", post_data, platform),
+        "ad_scores": ("scorer_worker.tasks.ad_batch_scorer", post_data, platform),
+        "td_scores": ("scorer_worker.tasks.td_batch_scorer", post_data, platform),
+    }
 
-    for item in post_texts:
+    scores = {}
+    with ThreadPoolExecutor() as executor:
+        future_to_task = {
+            executor.submit(execute_task, *args): name for name, args in tasks.items()
+        }
+        for future in as_completed(future_to_task):
+            task_name = future_to_task[future]
+            try:
+                scores[task_name] = future.result()
+            except Exception as exc:
+                logger.error(f"{task_name} generated an exception: {exc}")
+
+    har_scores = scores["har_scores"]
+    ar_scores = scores["ar_scores"]
+    ad_link_scores = scores["ad_scores"]
+    td_scores = scores["td_scores"]
+
+    ranked_results = []
+    non_har_posts = []  # these posts are ok
+    har_posts = []  # these posts elicit toxicity
+
+    for item in post_data:
         item_id = item["id"]
         har_score = har_scores[item_id]
         ar_score = ar_scores[item_id]
