@@ -66,16 +66,13 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
 
-    for item in post_data:
-        item_id = item["id"]
-        har_score = har_scores[item_id]
+    for item_id, har_score in har_scores.items():
         ar_score = ar_scores[item_id]
-        har_normalized = bisect(BOUNDARIES, har_scores[item_id])
-        ad_score = ad_link_scores[item_id] if ad_score != -1000 else td_scores[item_id]
+        har_normalized = bisect(BOUNDARIES, har_score)
+        ad_score = ad_scores[item_id] if ad_score != -1000 else td_scores[item_id]
 
         processed_item = {
-            "id": item["id"],
-            "text": item["text"],
+            "id": item_id,
             "audience_diversity": ad_score,
             "har_score": har_score,
             "ar_score": ar_score,

@@ -71,8 +71,8 @@ class ScoreOutput(BaseModel):
 
 
 class BatchScoreOutput(BaseModel):
-    batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'id' and 'text' keys for batch scoring"
+    batch: Dict[str, float] = Field(
+        description="A dictionary where keys are item IDs and values are scores"
     )
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
@@ -123,17 +123,13 @@ def har_scorer(self, **kwargs) -> dict[str, float]:
 
 def do_batch_scoring(
     input: BatchScoreInput, prediction_function: Callable[[list[str], str], list[float]]
-) -> list[dict[str, float]]:
+) -> dict[str, float]:
     scores = prediction_function([item["text"] for item in input.batch], input.platform)
-    batch = [
-        {
-            "id": item["id"],
-            "score": score,
-        }
-        for item, score in zip(input.batch, scores)
-    ]
+    result = dict()
+    for item, score in zip(input.batch, scores):
+        result[item["id"]] = score
 
-    return batch
+    return result
 
 
 @app.task(
