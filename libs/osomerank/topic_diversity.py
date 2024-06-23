@@ -36,7 +36,7 @@ s3 = boto3.client(
 )
 
 s3.download_file(Filename="models/AD_rockwell/BERTopic_diversity.json", Bucket=s3_bucket, Key="models/AD_rockwell/BERTopic_diversity.json")
-s3.download_file(Filename="models/AD_rockwell/topic_embeddings.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf.safetensors")
+s3.download_file(Filename="models/AD_rockwell/ctfidf.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf.safetensors")
 s3.download_file(Filename="models/AD_rockwell/topic_embeddings.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/topic_embeddings.safetensors")
 s3.download_file(Filename="models/AD_rockwell/ctfidf_config.json", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf_config.json")
 s3.download_file(Filename="models/AD_rockwell/topics.json", Bucket=s3_bucket, Key="models/AD_rockwell/topics.json")
