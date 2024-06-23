@@ -24,7 +24,7 @@ Attributes:
                                 be less than KILL_DEADLINE_SECONDS
 
 Functions:
-    har_scorer(**kwargs) -> dict[str, Any]: runner for har scorer
+    har_scorer(**kwargs) -> dict[str, float]: runner for har scorer
 
 Models:
     SentimentScoreInput
@@ -35,7 +35,7 @@ import logging
 import random
 import time
 from typing import Any, List, Dict, Callable
-from osomerank import elicited_response, audience_diversity
+from osomerank import elicited_response, audience_diversity, topic_diversity
 from pydantic import BaseModel, Field
 from scorer_worker.celery_app import app
 
@@ -47,44 +47,32 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-KILL_DEADLINE_SECONDS = 10
-TIME_LIMIT_SECONDS = 4
+KILL_DEADLINE_SECONDS = 20
+TIME_LIMIT_SECONDS = 20
 
 
 class SentimentScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
+    id: str = Field(description="The ID of the item to score")
     text: str = Field(description="The body of the post for scoring")
 
 
 class BatchScoreInput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id' and 'text' keys for batch scoring"
+        description="A list of dictionaries, each with 'id', 'text', 'urls' and 'platform' keys for batch scoring"
     )
-
-
-class AudienceDiversityInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-    url: str = Field(description="The URL of the post for scoring")
-
-
-class AudienceDiversityBatchInput(BaseModel):
-    batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id', 'text', 'embedded_urls' keys for batch scoring"
-    )
-    platform: str = Field(description="The platform of the posts for scoring")
+    platform: str = Field(description="The platform of the items to score")
 
 
 class ScoreOutput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
+    id: str = Field(description="The ID of the item to score")
     score: float = Field(description="Numerical score")
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
 
 
 class BatchScoreOutput(BaseModel):
-    batch: List[Dict[str, Any]] = Field(
-        description="A list of dictionaries, each with 'item_id' and 'text' keys for batch scoring"
+    batch: Dict[str, float] = Field(
+        description="A dictionary where keys are item IDs and values are scores"
     )
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
@@ -98,23 +86,10 @@ class SentimentScoreOutput(ScoreOutput):
     pass
 
 
-class RandomScoreInput(BaseModel):
-    item_id: str = Field(description="The ID of the item to score")
-    text: str = Field(description="The body of the post for scoring")
-    mean: float = Field(description="Mean of the random score", default=0.5)
-    sdev: float = Field(
-        description="Standard deviation of the radom score", default=0.1
-    )
-    sleep: float | None = Field(description="Sleep time for testing", default=None)
-    raise_exception: bool = Field(
-        description="Raise an exception for testing", default=False
-    )
-
-
 def do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
     har_score = elicited_response.har_prediction([input.text], "twitter")
     return SentimentScoreOutput(
-        item_id=input.item_id,
+        id=input.id,
         score=har_score,
     )
 
@@ -122,15 +97,15 @@ def do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
 @app.task(
     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
-def har_scorer(self, **kwargs) -> dict[str, Any]:
+def har_scorer(self, **kwargs) -> dict[str, float]:
     """Use pretrained model to perform HaR (Harmful Response) scoring
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
-        dict[str, Any]: The result of the har scoring task. The result is a dictionary
+        dict[str, float]: The result of the har scoring task. The result is a dictionary
                         representation of SentimentScoreOutput
 
     The results are stored in the Celery result backend.
@@ -148,31 +123,27 @@ def har_scorer(self, **kwargs) -> dict[str, Any]:
 
 def do_batch_scoring(
     input: BatchScoreInput, prediction_function: Callable[[list[str], str], list[float]]
-) -> list[dict[str, Any]]:
-    scores = prediction_function([item["text"] for item in input.batch], "twitter")
-    batch = [
-        {
-            "item_id": item["item_id"],
-            "score": score,
-        }
-        for item, score in zip(input.batch, scores)
-    ]
+) -> dict[str, float]:
+    scores = prediction_function([item["text"] for item in input.batch], input.platform)
+    result = dict()
+    for item, score in zip(input.batch, scores):
+        result[item["id"]] = score
 
-    return batch
+    return result
 
 
 @app.task(
     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
-def har_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+def har_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform HaR (Harmful Response) scoring (batch mode)
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
-        dict[str, Any]: The result of the har scoring task. The result is a dictionary
+        dict[str, float]: The result of the har scoring task. The result is a dictionary
                         representation of SentimentScoreOutput
 
     The results are stored in the Celery result backend.
@@ -188,21 +159,21 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
+    return batch_result.batch
 
 
 @app.task(
     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
-def ar_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+def ar_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform AR (Affectiv Response) scoring (batch mode)
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
-        dict[str, Any]: The result of the har scoring task. The result is a dictionary
+        dict[str, float]: The result of the har scoring task. The result is a dictionary
                         representation of SentimentScoreOutput
 
     The results are stored in the Celery result backend.
@@ -217,37 +188,21 @@ def ar_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
-
-
-def do_ad_td_batch_scoring(
-    input: AudienceDiversityBatchInput,
-    prediction_function: Callable[[list[str], str], list[float]],
-) -> list[dict[str, Any]]:
-    scores = prediction_function([item for item in input.batch], input.platform)
-    batch = [
-        {
-            "item_id": item["item_id"],
-            "score": score,
-        }
-        for item, score in zip(input.batch, scores)
-    ]
-
-    return batch
+    return batch_result.batch
 
 
 @app.task(
     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
-def ad_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+def ad_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform Audience diversity scoring (batch mode)
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
-        dict[str, Any]: The result of the ad scoring task. The result is a dictionary
+        dict[str, float]: The result of the ad scoring task. The result is a dictionary
                         representation of SentimentScoreOutput
 
     The results are stored in the Celery result backend.
@@ -257,27 +212,27 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
-    input = AudienceDiversityBatchInput(**kwargs)
+    input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_ad_td_batch_scoring(input, audience_diversity.ad_prediction),
+        batch=do_batch_scoring(input, audience_diversity.ad_prediction),
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
+    return batch_result.batch
 
 
 @app.task(
     bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
-def td_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
+def td_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform Topic diversity scoring (batch mode)
 
     Args:
         **kwargs: Arbitrary keyword arguments. These should be convertible to SentimentScoreInput,
-                  thus the input should contain `item_id` and `text`
+                  thus the input should contain `id` and `text`
 
     Returns:
-        dict[str, Any]: The result of the ad scoring task. The result is a dictionary
+        dict[str, float]: The result of the ad scoring task. The result is a dictionary
                         representation of SentimentScoreOutput
 
     The results are stored in the Celery result backend.
@@ -287,10 +242,10 @@ def td_batch_scorer(self, **kwargs) -> list[dict[str, Any]]:
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
-    input = AudienceDiversityBatchInput(**kwargs)
+    input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_ad_td_batch_scoring(input, audience_diversity.td_prediction),
+        batch=do_batch_scoring(input, topic_diversity.td_prediction),
         t_start=start,
         t_end=time.time(),
     )
-    return batch_result.model_dump()
+    return batch_result.batch

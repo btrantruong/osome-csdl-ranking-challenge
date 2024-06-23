@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  ranker:
+    build:
+    dockerfile: Dockerfile.ranker
+    command: ["gunicorn", "-b", "0.0.0.0:5001", "ranking_server:app"]
+    ports:
+      - 5001:5001
+
+
+
+
+  

@@ -15,5 +15,5 @@ from celery import Celery
 BROKER = f"{os.getenv('CELERY_BROKER', 'redis://localhost:6380')}/0"
 BACKEND = f"{os.getenv('CELERY_BACKEND', 'redis://localhost:6380')}/0"
 app = Celery("scorer_worker", backend=BACKEND, broker=BROKER)
-app.autodiscover_tasks(["scorer_worker.tasks"])
+app.autodiscover_tasks(["scorer_worker.tasks"], force=True)
 app.conf.task_default_queue = "scorer"

@@ -185,7 +185,20 @@ data/
 libs/osomerank/models/
 scripts/
 app/ranker*.py
+
+# Sensitive data
+libs/osomerank/data
 rc-extension/
 report/
+
+# Sensitive data
+libs/osomerank/data
+
+# App
 app/job_scheduler/
-app/sanbox_worker/
+app/sandbox_worker/
+
+# Sensitive data
+libs/osomerank/data
+libs/osomerank/config_confidential.ini
+*.mk
