@@ -5,7 +5,7 @@ description = "Testing ranking algorithms to improve social cohesion."
 authors = ["Giovanni Luca Ciampaglia <glciampagl@gmail.com>; Bao T. Truong <baotruon@iu.edu>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "osomerank", from = "libs" }]
+packages = [{ include = "osomerank", from = "libs" }, {include = "ranking_server", from = "app"}]
 include = [
     { path = "libs/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
     { path = "libs/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },

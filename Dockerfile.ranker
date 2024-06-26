@@ -32,9 +32,11 @@ ENV FLASK_RUN_PORT=5001
 EXPOSE 5001
 
 #COPY app/ranking_server/ranking_server.py app/config.ini app/caller.py /app/
-COPY app/ranking_server/ranking_server.py app/config.ini /app/
+#COPY app/ranking_server app/ranking_server/ranking_server.py app/config.ini /app/
+COPY app/ranking_server /app/ranking_server
+COPY app/config.ini /app/
 
 # Define the command to run the application
 #CMD ["gunicorn", "-k", "gevent", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
-#CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
-CMD ["gunicorn", "ranking_server:app", "-w", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:5001"]
+CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
+#CMD ["gunicorn", "ranking_server:app", "-w", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:5001"]
