@@ -4,7 +4,7 @@ services:
   ranker:
     build:
     dockerfile: Dockerfile.ranker
-    command: ["gunicorn", "-k", "gevent", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
+    command: ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
     ports:
       - 5001:5001
 
