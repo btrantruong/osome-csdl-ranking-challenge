@@ -39,12 +39,6 @@ db_password = config.get("POSTGRES", "password")
 
 REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
 
-def redis_client():
-    global memoized_redis_client
-    if memoized_redis_client is None:
-        memoized_redis_client = redis.Redis.from_url(REDIS_DB)
-    return memoized_redis_client
-
 def remove_urls(text, replacement_text=""):
     # Define a regex pattern to match URLs
     url_pattern = re.compile(r'https?://\S+|www\.\S+')
@@ -184,7 +178,4 @@ topic_model.save("models/", serialization="safetensors", save_ctfidf=True, save_
 s3.upload_file(Filename="models/ctfidf.safetensors", Bucket=s3_bucket, Key="ctfidf.safetensors")
 s3.upload_file(Filename="models/topic_embeddings.safetensors", Bucket=s3_bucket, Key="topic_embeddings.safetensors")
 s3.upload_file(Filename="models/ctfidf_config.json", Bucket=s3_bucket, Key="ctfidf_config.json")
-s3.upload_file(Filename="models/topics.json", Bucket=s3_bucket, Key="topics.json") 
-
-#for filename in os.listdir("models/"):
-#    s3.upload_file("models/" + filename, s3_bucket, filename)
+s3.upload_file(Filename="models/topics.json", Bucket=s3_bucket, Key="topics.json")

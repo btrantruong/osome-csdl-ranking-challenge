@@ -73,7 +73,7 @@ s3 = boto3.client(
         aws_secret_access_key=s3_access_key_secret
 )
 
-response = s3.get_object(Bucket=s3_bucket, Key='audience_diversity_2022-2023_visitor_level.csv')
+response = s3.get_object(Bucket=s3_bucket, Key='data/audience_diversity_2022-2023_visitor_level.csv')
 
 # Need to remove domains whih are platform corref from NewsGuard data
 #pd_audience_diversity_URLs = pd.read_csv(
