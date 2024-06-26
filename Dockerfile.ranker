@@ -38,5 +38,5 @@ COPY app/config.ini /app/
 
 # Define the command to run the application
 #CMD ["gunicorn", "-k", "gevent", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
-CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
+CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "1", "-b", "0.0.0.0:5001", "ranking_server:app"]
 #CMD ["gunicorn", "ranking_server:app", "-w", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:5001"]
