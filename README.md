@@ -41,18 +41,6 @@ To (i) build the Docker images for all components and (ii) start them running in
 
 ### Build and run a SINGLE component
 
-To (i) build the Docker image for a single component and (ii) start it running, there are two options.
-
-#### Option 1
-
-If you have already run `make run`, the images for all components should already exist (you can check this with `docker images`). In that case you just need to start a container running the relevant image, which can be done with (e.g.)
-
-Command: (to be updated): 
-
-#### Option 2
-
-You can also just build a single component and run it.
-
 1. Build image: e.g., `docker build -f docker/Dockerfile.ranker -t ranker .`
 2. Run: e.g., `docker run ranker`
 
