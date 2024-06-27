@@ -26,4 +26,4 @@ EXPOSE 5001
 COPY app/ /app
 
 # Define the command to run the application
-CMD ["gunicorn", "-k", "uvicorn_worker.UvicornWorker", "-w", "4", "-b", "0.0.0.0:5001", "ranking_server:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "ranking_server:app"]
