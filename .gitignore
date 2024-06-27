@@ -202,3 +202,5 @@ app/sandbox_worker/
 libs/osomerank/data
 libs/osomerank/config_confidential.ini
 *.mk
+app/scorer_worker/make_fake_request.py
+app/ranking_server/ranking_server_debug.py
