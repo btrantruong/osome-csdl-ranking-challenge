@@ -94,9 +94,13 @@ def get_p95_latency(results_df):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run ranking challenge test.")
-    parser.add_argument("url", help="URL of the application to test")
-    args = parser.parse_args()
+    url = "http://127.0.0.1:5001"
+    run_test(url)
+    # parser = argparse.ArgumentParser(description="Run ranking challenge test.")
+    # parser.add_argument("url", help="URL of the application to test")
+    # args = parser.parse_args()
+
+    # run_test(args.url)
 
     run_test(args.url)
 

@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Unfortunately Celery timeout granularity is in seconds, and if this value is
 # fractional, it will be rounded up to the nearest second when used in
 # `get` with the `timeout` parameter.
-DEADLINE_SECONDS = 600
+DEADLINE_SECONDS = 10
 
 
 def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str, Any]]:
