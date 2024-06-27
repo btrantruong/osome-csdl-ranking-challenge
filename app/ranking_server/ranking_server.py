@@ -6,10 +6,10 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import uvicorn
 import redis
 from fastapi import FastAPI
-
 from utils import multisort, clean_text
+import test_data
 from bisect import bisect
-from ranking_challenge.request import RankingRequest
+from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
 import sys
 
@@ -47,6 +47,13 @@ def execute_task(task_name, post_data, platform):
     return compute_batch_scores(task_name, post_data, platform)
 
 
+def get_reddit_text(post: ContentItem):
+    # post: dict with at least the key "text", optional: "title"
+    title = post.title if post.title else ""
+    text = post.text
+    return title + text
+
+
 def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     """
     Combine scores into a single list of dictionaries.
@@ -54,7 +61,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     1. non_har_posts: an ordered list of Non-HaR (low-harm) posts. These posts are further ranked by audience diversity, break tie by AR score (sentiment)
     2. har_posts: an ordered list of HaR (harmful). These posts are further ranked by AR score (sentiment)
     Args:
-        har_scores, ar_scores, ad_scores, td_scores (list of dict): list of dictionaries, each with 'id' and 'score' keys for batch scoring"
+        har_scores, ar_scores, ad_scores, td_scores (dict[str, float]): dictionary where k,v are item IDs, scores
 
     Returns:
         (list of dict): a reordered list of dictionaries
@@ -66,7 +73,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
 
-    for item_id, har_score in har_scores.items():
+    for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_score)
         ad_score = ad_scores[item_id] if ad_score != -1000 else td_scores[item_id]
@@ -103,48 +110,68 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     logger.info("Received ranking request")
     redis_client_obj = redis.Redis.from_url(REDIS_DB)
-    if "survey" in ranking_request.keys():
+    if ranking_request.survey:
         redis_client_obj[ranking_request.session.user_id] = (
             ranking_request.survey.ideology
         )
 
     platform = ranking_request.session.platform
     post_items = ranking_request.items
-
-    # preprocess posts: clean text
     post_data = [
-        {"id": x["id"], "text": clean_text(x["text"]), "urls": x["embedded_urls"]}
-        for x in post_items
+        {
+            "id": item.id,
+            "text": (
+                clean_text(item.text)
+                if platform != "reddit"
+                else clean_text(get_reddit_text(item))
+            ),
+            "urls": item.embedded_urls if item.embedded_urls else [],
+        }
+        for item in post_items
     ]
 
     # get different scores
-    tasks = {
-        "har_scores": (
-            "scorer_worker.tasks.har_batch_scorer",
-            post_data,
-            platform,
-        ),
-        "ar_scores": ("scorer_worker.tasks.ar_batch_scorer", post_data, platform),
-        "ad_scores": ("scorer_worker.tasks.ad_batch_scorer", post_data, platform),
-        "td_scores": ("scorer_worker.tasks.td_batch_scorer", post_data, platform),
-    }
+    har_scores = compute_batch_scores(
+        "scorer_worker.tasks.har_batch_scorer", post_data, platform
+    )
+    ar_scores = compute_batch_scores(
+        "scorer_worker.tasks.ar_batch_scorer", post_data, platform
+    )
+    ad_link_scores = compute_batch_scores(
+        "scorer_worker.tasks.ad_batch_scorer", post_data, platform
+    )
+    td_scores = compute_batch_scores(
+        "scorer_worker.tasks.td_batch_scorer", post_data, platform
+    )
 
-    scores = {}
-    with ThreadPoolExecutor() as executor:
-        future_to_task = {
-            executor.submit(execute_task, *args): name for name, args in tasks.items()
-        }
-        for future in as_completed(future_to_task):
-            task_name = future_to_task[future]
-            try:
-                scores[task_name] = future.result()
-            except Exception as exc:
-                logger.error(f"{task_name} generated an exception: {exc}")
+    ## Using ThreadPoolExecutor doesn't work?
+    # tasks = {
+    #     "har_scores": (
+    #         "scorer_worker.tasks.har_batch_scorer",
+    #         post_data,
+    #         platform,
+    #     ),
+    #     "ar_scores": ("scorer_worker.tasks.ar_batch_scorer", post_data, platform),
+    #     "ad_scores": ("scorer_worker.tasks.ad_batch_scorer", post_data, platform),
+    #     "td_scores": ("scorer_worker.tasks.td_batch_scorer", post_data, platform),
+    # }
 
-    har_scores = scores["har_scores"]
-    ar_scores = scores["ar_scores"]
-    ad_link_scores = scores["ad_scores"]
-    td_scores = scores["td_scores"]
+    # scores = {}
+    # with ThreadPoolExecutor() as executor:
+    #     future_to_task = {
+    #         executor.submit(execute_task, *args): name for name, args in tasks.items()
+    #     }
+    #     for future in as_completed(future_to_task):
+    #         task_name = future_to_task[future]
+    #         try:
+    #             scores[task_name] = future.result()
+    #         except Exception as exc:
+    #             logger.error(f"{task_name} generated an exception: {exc}")
+
+    # har_scores = scores["har_scores"]
+    # ar_scores = scores["ar_scores"]
+    # ad_link_scores = scores["ad_scores"]
+    # td_scores = scores["td_scores"]
 
     ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
@@ -155,5 +182,9 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
 if __name__ == "__main__":
     uvicorn.run(
-        "ranking_server:app", workers=2, host="127.0.0.1", port=5001, log_level="debug"
+        "ranking_server:app",
+        host="127.0.0.1",
+        port=5001,
+        log_level="debug",
+        reload=True,
     )
