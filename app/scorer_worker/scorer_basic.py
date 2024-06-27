@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Unfortunately Celery timeout granularity is in seconds, and if this value is
 # fractional, it will be rounded up to the nearest second when used in
 # `get` with the `timeout` parameter.
-DEADLINE_SECONDS = 10
+DEADLINE_SECONDS = 600
 
 
 def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -76,7 +76,7 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
 
 def compute_batch_scores(
     task_name: str, input: list[dict[str, Any]], platform: str
-) -> list[dict[str, Any]]:
+) -> dict[str, float]:
     """Task dispatcher/manager.
 
     Args:
@@ -84,7 +84,7 @@ def compute_batch_scores(
         input (list[dict[str, Any]]): List of input dictionaries for the tasks.
 
     Returns:
-        list[dict[str, Any]]: List of output dictionaries for the tasks.
+        dict[str, float]: Output dictionary for the tasks. Each dictionary have item IDs as keys and values are scores
     """
 
     tasks = [
