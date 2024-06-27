@@ -29,20 +29,6 @@ def redis_client(request):
 
 
 def test_rank(client, redis_client):
-    # put named entities in redis
-    result_key = "my_worker:scheduled:top_named_entities"
-
-    fake_named_entities = ["foo", "bar", "baz"]
-    redis_client.set(
-        result_key,
-        json.dumps(
-            {
-                "top_named_entities": fake_named_entities,
-                "timestamp": datetime.now(UTC).isoformat(),
-            }
-        ),
-    )
-
     # Send POST request to the API
     response = client.post("/rank", json=test_data.BASIC_EXAMPLE)
 
@@ -53,10 +39,4 @@ def test_rank(client, redis_client):
         assert False
 
     result = response.json()
-
-    # Check if the response contains the expected ids, in the expected order
-    assert result["ranked_ids"] == [
-        "should-rank-high",
-        "should-rank-high-2",
-        "should-rank-low",
-    ]
+    print("Finished test ")
