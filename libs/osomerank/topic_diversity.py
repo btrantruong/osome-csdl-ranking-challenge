@@ -23,29 +23,37 @@ libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
 config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 
-s3_region_name = config.get("S3", "S3_REGION_NAME")
-s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-s3_bucket = config.get("S3", "S3_BUCKET")
+model_dir = os.path.join(
+    libs_path, config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
+)
+# Download and load models from S3
+if not os.path.exists(model_dir):
+    os.makedirs(model_dir)
 
-s3 = boto3.client(
-        service_name='s3',
+    # S3 config
+    s3_region_name = config.get("S3", "S3_REGION_NAME")
+    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    s3_bucket = config.get("S3", "S3_BUCKET")
+
+    s3 = boto3.client(
+        service_name="s3",
         region_name=s3_region_name,
         aws_access_key_id=s3_access_key,
-        aws_secret_access_key=s3_access_key_secret
-)
-
-s3.download_file(Filename="models/AD_rockwell/BERTopic_diversity.json", Bucket=s3_bucket, Key="models/AD_rockwell/BERTopic_diversity.json")
-s3.download_file(Filename="models/AD_rockwell/ctfidf.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf.safetensors")
-s3.download_file(Filename="models/AD_rockwell/topic_embeddings.safetensors", Bucket=s3_bucket, Key="models/AD_rockwell/topic_embeddings.safetensors")
-s3.download_file(Filename="models/AD_rockwell/ctfidf_config.json", Bucket=s3_bucket, Key="models/AD_rockwell/ctfidf_config.json")
-s3.download_file(Filename="models/AD_rockwell/topics.json", Bucket=s3_bucket, Key="models/AD_rockwell/topics.json")
-
-BERTopic_model_loaded = BERTopic.load(
-    os.path.join(
-        libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_BERTtopic")
+        aws_secret_access_key=s3_access_key_secret,
     )
-)
+
+    TD_files = [
+        entry for entry in config.options("TOPIC_DIVERSITY") if "dir" not in entry
+    ]
+    for td_file in TD_files:
+        s3.download_file(
+            Filename=os.path.join(model_dir, td_file),
+            Bucket=s3_bucket,
+            Key=config.get("TOPIC_DIVERSITY", td_file),
+        )
+
+BERTopic_model_loaded = BERTopic.load(os.path.join(libs_path, model_dir))
 # BERTopic_model_loaded = BERTopic.load()
 
 topic_diversity = {}

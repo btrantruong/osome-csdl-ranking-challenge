@@ -1,0 +1,29 @@
+FROM python:3.12
+
+# Set directory
+WORKDIR /app/ranking_server
+
+# Install Poetry
+RUN --mount=type=cache,target=/root/.cache \
+    pip install poetry
+
+# Install dependencies using Poetry
+RUN --mount=type=bind,source=.,target=/app/ranking_server \
+    --mount=type=cache,target=/root/.cache \
+    poetry config virtualenvs.create false \
+    && poetry install --only=main \
+    && poetry build --format=wheel --output=/tmp \
+    && pip install /tmp/osome*.whl \
+    # && poetry cache clear --all --no-interaction PyPI \
+    # && poetry cache clear --all --no-interaction _default_cache \
+    # && pip cache purge \
+    && rm -f /tmp/osome*.whl
+
+# Expose the port the app runs on
+EXPOSE 5001
+
+# Copy rankingserver / scorer apps
+COPY app/ /app
+
+# Define the command to run the application
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "ranking_server:app"]

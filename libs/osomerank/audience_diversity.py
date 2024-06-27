@@ -59,28 +59,35 @@ platform_urls = [
 
 libs_path = os.path.dirname(__file__)
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
+config.read(os.path.join(libs_path, "config.ini"))
 
-s3_region_name = config.get("S3", "S3_REGION_NAME")
-s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-s3_bucket = config.get("S3", "S3_BUCKET")
+ad_model_path = os.path.join(
+    libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
+)
+# Download and load models from S3
+if not os.path.exists(ad_model_path):
+    # S3 config
+    s3_region_name = config.get("S3", "S3_REGION_NAME")
+    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
+    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    s3_bucket = config.get("S3", "S3_BUCKET")
 
-s3 = boto3.client(
-        service_name='s3',
+    s3 = boto3.client(
+        service_name="s3",
         region_name=s3_region_name,
         aws_access_key_id=s3_access_key,
-        aws_secret_access_key=s3_access_key_secret
-)
+        aws_secret_access_key=s3_access_key_secret,
+    )
+    response = s3.get_object(
+        Filename=ad_model_path,
+        Bucket=s3_bucket,
+        Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"),
+    )
 
-response = s3.get_object(Bucket=s3_bucket, Key='data/audience_diversity_2022-2023_visitor_level.csv')
-
-# Need to remove domains whih are platform corref from NewsGuard data
-#pd_audience_diversity_URLs = pd.read_csv(
-#    os.path.join(libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"))
-#)
-
-pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response['Body'].read()))
+    pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response["Body"].read()))
+else:
+    # TODO: Need to remove domains whih are platform corref from NewsGuard data
+    pd_audience_diversity_URLs = pd.read_csv(ad_model_path)
 
 pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
     pd_audience_diversity_URLs["n_visitors"] >= 10

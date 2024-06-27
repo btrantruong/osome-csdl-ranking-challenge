@@ -2,10 +2,10 @@
 name = "osome-csdl-ranking-challenge"
 version = "0.1.0"
 description = "Testing ranking algorithms to improve social cohesion."
-authors = ["Your Name <you@example.com>"]
+authors = ["Giovanni Luca Ciampaglia <glciampagl@gmail.com>; Bao T. Truong <baotruon@iu.edu>"]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "osomerank", from = "libs" }]
+packages = [{ include = "osomerank", from = "libs" }, {include = "ranking_server", from = "app"}]
 include = [
     { path = "libs/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
     { path = "libs/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },
@@ -14,30 +14,37 @@ include = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-Flask-Cors = "^4.0.1"
-Flask = "^3.0.3"
-requests = "^2.32.3"
-sentence-transformers = "^3.0.1"
-nltk = "^3.8.1"
+aiodns = "^3.2.0"
+aiohttp = "^3.9.5"
 bertopic = "^0.16.2"
-rbo = "^0.1.3"
-black = "^24.4.2"
-isort = "^5.13.2"
-flake8 = "^7.0.0"
-neovim = "^0.3.1"
+boto3 = "^1.34.130"
+brotli = "^1.1.0"
+celery = "^5.4.0"
+celery-redbeat = "^2.2.0"
+Cython = "*"
+faker = "^25.9.1"
+fastapi = "^0.111.0"
+hdbscan = "^0.8.37"
+psycopg2-binary = "^2.9.9"
+pydantic = "^2.7.4"
+ranking-challenge = "^2.1.6"
+redis = "^5.0.6"
+requests = "^2.32.3"
 scikit-learn = "^1.5.0"
 scipy = "^1.13.1"
-seaborn = "^0.13.2"
-pandas = "^2.2.2"
-hdbscan = "^0.8.36"
-aiohttp = "^3.9.5"
-celery = "^5.4.0"
-gunicorn = "^22.0.0"
-gevent = "*"
+sentence-transformers = "^3.0.1"
+sqlalchemy = "^2.0.31"
+torch = "^2.3.1"
 unshorten-fast = {git = "https://github.com/glciampaglia/unshorten-fast.git"}
+uvicorn = "^0.30.1"
+
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
+flake8 = "^7.1.0"
+black = "^24.4.2"
+isort = "^5.13.2"
+requests = "^2.32.3"
 
 [build-system]
 requires = ["poetry-core"]

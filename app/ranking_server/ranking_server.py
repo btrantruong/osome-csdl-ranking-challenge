@@ -6,17 +6,16 @@ from concurrent.futures.thread import ThreadPoolExecutor
 import uvicorn
 import redis
 from fastapi import FastAPI
-
 from utils import multisort, clean_text
+import test_data
 from bisect import bisect
-from ranking_challenge.request import RankingRequest
+from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
 import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-
-from scorer_worker.scorer_basic import compute_scores
-
+from scorer_worker.scorer_basic import compute_batch_scores
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logging.basicConfig(
     level=logging.INFO,
@@ -44,75 +43,44 @@ def redis_client():
     return memoized_redis_client
 
 
-## Helper: normalization for HaR scores
-BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+def execute_task(task_name, post_data, platform):
+    return compute_batch_scores(task_name, post_data, platform)
 
 
-# Items are ordered as follows:
-# 1. An ordered list of Non-HaR (low-harm) posts are further ranked by audience diversity, break tie by AR score (sentiment)
-# 2. An ordered list of HaR (harmful) posts are ranked by AR score (sentiment)
-@app.post("/rank")
-def rank(ranking_request: RankingRequest) -> RankingResponse:
+def get_reddit_text(post: ContentItem):
+    # post: dict with at least the key "text", optional: "title"
+    title = post.title if post.title else ""
+    text = post.text
+    return title + text
 
-    logger.info("Received ranking request")
-    redis_client_obj = redis.Redis.from_url(REDIS_DB)
-    if 'survey' in ranking_request.keys():
-        redis_client_obj[ranking_request.session.user_id] = ranking_request.survey.ideology
+
+def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
+    """
+    Combine scores into a single list of dictionaries.
+    Items are ordered as follows:
+    1. non_har_posts: an ordered list of Non-HaR (low-harm) posts. These posts are further ranked by audience diversity, break tie by AR score (sentiment)
+    2. har_posts: an ordered list of HaR (harmful). These posts are further ranked by AR score (sentiment)
+    Args:
+        har_scores, ar_scores, ad_scores, td_scores (dict[str, float]): dictionary where k,v are item IDs, scores
+
+    Returns:
+        (list of dict): a reordered list of dictionaries
+    """
+    ## Helper: normalization for HaR scores
+    BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+
     ranked_results = []
-    # get the named entities from redis
-    result_key = "my_worker:scheduled:top_named_entities"
-
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
 
-    # preprocess posts: clean text
-    post_texts = [
-        {"item_id": x.id, "text": clean_text(x.text)} for x in ranking_request.items
-    ]
-
-    har_scores = compute_scores("scorer_worker.tasks.har_scorer", post_texts)
-    ar_scores = compute_scores("scorer_worker.tasks.ar_scorer", post_texts)
-
-    # Default to Twitter for now
-
-    post_data = {
-        "batch": [
-            {"item_id": x.id, "text": x.text, "embedded_urls": x.embedded_urls}
-            for x in ranking_request.items
-        ],
-        "platform": "twitter",
-    }
-    ad_link_scores = compute_scores("scorer_worker.tasks.har_scorer", post_data)
-    td_scores = compute_scores("scorer_worker.tasks.har_scorer", post_data)
-
-    # Note: Another way is to score each item in a request with ThreadPoolExecutor. But this might take longer
-
-    # with ThreadPoolExecutor() as executor:
-
-    #     future = executor.submit(
-    #         compute_scores, "scorer_worker.tasks.har_scorer", data
-    #     )
-    #     try:
-    #         # logger.info("Submitting score computation task")
-    #         scoring_result = future.result(timeout=0.5)
-    #     except TimeoutError:
-    #         logger.error("Timed out waiting for score results")
-    #     except Exception as e:
-    #         logger.error(f"Error computing scores: {e}")
-    #     else:
-    #         logger.info(f"Computed scores: {scoring_result}")
-
-    for item in post_texts:
-        item_id = item["item_id"]
-        har_score = har_scores[item_id]
+    for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
-        har_normalized = bisect(BOUNDARIES, har_scores[item_id])
-        ad_score = ad_link_scores[item_id] if ad_score != -1000 else td_scores[item_id]
+        har_normalized = bisect(BOUNDARIES, har_score)
+        ad_score = ad_scores[item_id] if ad_score != -1000 else td_scores[item_id]
 
         processed_item = {
-            "id": item["item_id"],
-            "text": item["text"],
-            # "audience_diversity": ad_score,
+            "id": item_id,
+            "audience_diversity": ad_score,
             "har_score": har_score,
             "ar_score": ar_score,
             "har_normalized": har_normalized,  # {0,1,2,3,4}
@@ -124,19 +92,88 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
             non_har_posts.append(processed_item)
 
     # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
-    # multisort(
-    #     non_har_posts,
-    #     [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
-    # )
     multisort(
         non_har_posts,
-        [("har_normalized", False), ("ar_score", True)],
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
 
     # concat the two lists, prioritizing non-HaR posts
     # ranked_results = non_har_posts + har_posts
     ranked_results = non_har_posts + har_posts
+
+    return ranked_results
+
+
+@app.post("/rank")
+def rank(ranking_request: RankingRequest) -> RankingResponse:
+
+    logger.info("Received ranking request")
+    redis_client_obj = redis.Redis.from_url(REDIS_DB)
+    if ranking_request.survey:
+        redis_client_obj[ranking_request.session.user_id] = (
+            ranking_request.survey.ideology
+        )
+
+    platform = ranking_request.session.platform
+    post_items = ranking_request.items
+    post_data = [
+        {
+            "id": item.id,
+            "text": (
+                clean_text(item.text)
+                if platform != "reddit"
+                else clean_text(get_reddit_text(item))
+            ),
+            "urls": item.embedded_urls if item.embedded_urls else [],
+        }
+        for item in post_items
+    ]
+
+    # get different scores
+    har_scores = compute_batch_scores(
+        "scorer_worker.tasks.har_batch_scorer", post_data, platform
+    )
+    ar_scores = compute_batch_scores(
+        "scorer_worker.tasks.ar_batch_scorer", post_data, platform
+    )
+    ad_link_scores = compute_batch_scores(
+        "scorer_worker.tasks.ad_batch_scorer", post_data, platform
+    )
+    td_scores = compute_batch_scores(
+        "scorer_worker.tasks.td_batch_scorer", post_data, platform
+    )
+
+    ## Using ThreadPoolExecutor doesn't work?
+    # tasks = {
+    #     "har_scores": (
+    #         "scorer_worker.tasks.har_batch_scorer",
+    #         post_data,
+    #         platform,
+    #     ),
+    #     "ar_scores": ("scorer_worker.tasks.ar_batch_scorer", post_data, platform),
+    #     "ad_scores": ("scorer_worker.tasks.ad_batch_scorer", post_data, platform),
+    #     "td_scores": ("scorer_worker.tasks.td_batch_scorer", post_data, platform),
+    # }
+
+    # scores = {}
+    # with ThreadPoolExecutor() as executor:
+    #     future_to_task = {
+    #         executor.submit(execute_task, *args): name for name, args in tasks.items()
+    #     }
+    #     for future in as_completed(future_to_task):
+    #         task_name = future_to_task[future]
+    #         try:
+    #             scores[task_name] = future.result()
+    #         except Exception as exc:
+    #             logger.error(f"{task_name} generated an exception: {exc}")
+
+    # har_scores = scores["har_scores"]
+    # ar_scores = scores["ar_scores"]
+    # ad_link_scores = scores["ad_scores"]
+    # td_scores = scores["td_scores"]
+
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
 
@@ -144,4 +181,10 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
 
 if __name__ == "__main__":
-    uvicorn.run("ranking_server:app", host="127.0.0.1", port=5001, log_level="debug")
+    uvicorn.run(
+        "ranking_server:app",
+        host="127.0.0.1",
+        port=5001,
+        log_level="debug",
+        reload=True,
+    )
