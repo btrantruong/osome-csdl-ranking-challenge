@@ -4,7 +4,7 @@ from osomerank.utils import save_to_json, clean_text
 
 ranking_request = json.load(
     open(
-        "/Users/baott/osome-csdl-ranking-challenge/app/scorer_worker/data/facebook_request_short.json",
+        "debug/data/facebook_request_short.json",
         "r",
     )
 )
