@@ -122,39 +122,33 @@ def process_URL_multiple(urls):
     return res
 
 
-def ad_prediction(feed_posts, sm_type):
+def ad_prediction(feed_posts, platform=None):
+    """
+    Calculates the audience diversity of a list of posts.
+    Args:
+        feed_posts (list of dict): list of posts where each dict is a post with the keys: {"id", "text", "urls"}
+        platform (str): platform type: {"twitter", "facebook", "reddit"}
+
+    Returns:
+        audience_diversity_val (list): the audience diversity scores of these posts.
+    """
     urls_available = []
     urls_index = []
 
     audience_diversity_val = [-1000] * len(feed_posts)
 
     try:
-        if sm_type == "twitter":
-            for i in range(len(feed_posts)):
-                feed_post = feed_posts[i]
-                if feed_post["embedded_urls"]:
-                    for urll in feed_post["embedded_urls"]:
-                        if not any(
-                            [platform_url in urll for platform_url in platform_urls]
-                        ):
-                            urls_index.append(i)
-                            urls_available.append(urll)
+        for idx, feed_post in enumerate(feed_posts):
+            url_from_text = URL_from_text(feed_post["text"])
+            if url_from_text == "NA":
+                url_from_text = []
 
-        else:
-            for i in range(len(feed_posts)):
-                feed_post = feed_posts[i]
-                if "text" in feed_post.keys():
-                    if type(feed_post["text"]) != float:
-                        url_from_text = URL_from_text(feed_post["text"])
-                        if url_from_text != "NA":
-                            if not any(
-                                [
-                                    platform_url in url_from_text
-                                    for platform_url in platform_urls
-                                ]
-                            ):
-                                urls_index.append(i)
-                                urls_available.append(url_from_text)
+            post_urls = feed_post["urls"] + url_from_text
+
+            for urll in post_urls:
+                if not any([platform_url in urll for platform_url in platform_urls]):
+                    urls_index.append(idx)
+                    urls_available.append(urll)
 
         if urls_available:
             urls_available_unshortened = unshorten(urls_available, cache_redis=True)
@@ -162,15 +156,16 @@ def ad_prediction(feed_posts, sm_type):
         else:
             urls_available_unshortened = []
 
-        for i in range(len(urls_available_unshortened)):
-            url_available = urls_available_unshortened[i]
+        for idx, url_available in enumerate(urls_available_unshortened):
             domain = ".".join(url_available.split("/")[2].split(".")[-2:])
             if domain in audience_diversity_domains:
                 if not any([platform_url in domain for platform_url in platform_urls]):
                     ad_val = pd_audience_diversity_URLs.loc[
                         pd_audience_diversity_URLs["private_domain"] == domain
                     ]["visitor_var"].values[0]
-                    audience_diversity_val[urls_index[i]] = (ad_val - AD_MEAN) / AD_STD
+                    audience_diversity_val[urls_index[idx]] = (
+                        ad_val - AD_MEAN
+                    ) / AD_STD
 
         return audience_diversity_val
 
@@ -179,15 +174,15 @@ def ad_prediction(feed_posts, sm_type):
         return audience_diversity_val
 
 
-def ad_prediction_single(feed_post, sm_type):
+def ad_prediction_single(feed_post, platform):
     url_available = ""
 
     audience_diversity_val = -1000
 
     try:
-        if sm_type == "twitter":
-            if feed_post["expanded_url"]:
-                url_available = feed_post["expanded_url"]
+        if platform == "twitter":
+            if feed_post["urls"]:
+                url_available = feed_post["urls"]
 
         else:
             if URL_from_text(feed_post["text"]) != "NA":

@@ -73,48 +73,34 @@ def remove_urls(text, replacement_text=""):
     return text_without_urls
 
 
-def td_prediction(feed_posts, sm_type):
+def td_prediction(feed_posts, platform=None):
+    """
+    Calculates the topic diversity of a list of posts as a proxy for audience diversity for both without urls.
+    Args:
+        feed_posts (list of dict): list of posts where each dict is a post with the keys: {"id", "text", "urls"}
+        platform (str, optional): the platform of the posts.
 
+    Returns:
+        audience_diversity_val (list): the audience diversity scores of these posts.
+    """
     audience_diversity_val = [-1000] * len(feed_posts)
 
     try:
-
-        sm_texts = []
-        text_index = []
-
-        for i in range(len(feed_posts)):
-            if audience_diversity_val[i] == -1000:
-                feed_post = feed_posts[i]
-                if sm_type == "reddit":
-                    if "title" in feed_post.keys() and "text" in feed_post.keys():
-                        sm_texts.append(feed_post["title"] + ". " + feed_post["text"])
-                        text_index.append(i)
-                    elif "title" in feed_post.keys():
-                        sm_texts.append(feed_post["title"])
-                        text_index.append(i)
-                    elif "text" in feed_post.keys():
-                        sm_texts.append(feed_post["text"])
-                        text_index.append(i)
-                else:
-                    if type(feed_post["text"]) != float:
-                        sm_texts.append(feed_post["text"])
-                        text_index.append(i)
-
-        sm_texts_processed = [clean_text(text) for text in sm_texts]
+        sm_texts_processed = [feed_post["text"] for feed_post in feed_posts]
         texts_processed = []
         text_index_processed = []
 
-        for i in range(len(sm_texts_processed)):
-            if sm_texts_processed[i] != "NA":
-                texts_processed.append(sm_texts_processed[i])
-                text_index_processed.append(text_index[i])
+        for idx, text in enumerate(sm_texts_processed):
+            if text != "NA":
+                texts_processed.append(text)
+                text_index_processed.append(idx)
 
         topics = BERTopic_model_loaded.transform(texts_processed)[0]
 
-        for i in range(len(topics)):
-            if int(topics[i]) != -1:
-                td_val = topic_diversity[str(topics[i])]
-                audience_diversity_val[text_index_processed[i]] = (
+        for idx, topic in enumerate(topics):
+            if int(topic) != -1:
+                td_val = topic_diversity[str(topic)]
+                audience_diversity_val[text_index_processed[idx]] = (
                     td_val - TD_MEAN
                 ) / TD_STD
 
@@ -122,29 +108,19 @@ def td_prediction(feed_posts, sm_type):
         print(traceback.format_exc())
         return [mean_topic_diversity] * len(feed_posts)
 
-    for i in range(len(audience_diversity_val)):
-        if audience_diversity_val[i] == -1000:
-            audience_diversity_val[i] = mean_topic_diversity
+    for idx, ad in enumerate(audience_diversity_val):
+        if ad == -1000:
+            audience_diversity_val[idx] = mean_topic_diversity
 
     return audience_diversity_val
 
 
-def ad_prediction_single(feed_post, sm_type):
+def ad_prediction_single(feed_post, platform):
     audience_diversity_val = -1000
 
     try:
-        sm_text = ""
-        if sm_type == "reddit":
-            if "title" in feed_post.keys() and "text" in feed_post.keys():
-                sm_text = feed_post["title"] + ". " + feed_post["text"]
-            elif "title" in feed_post.keys():
-                sm_text = feed_post["title"]
-            else:
-                sm_text = feed_post["text"]
-        else:
-            sm_text = feed_post["text"]
-        if clean_text(sm_text) != "NA":
-            sm_text = clean_text(sm_text)
+        sm_text = feed_post["text"]
+        if sm_text != "NA":
             topic = BERTopic_model_loaded.transform([sm_text])[0][0]
             if int(topic) != -1:
                 audience_diversity_val = topic_diversity[str(topic)]
