@@ -181,23 +181,6 @@ test/
 first_submission/data/*
 !first_submission/data/sample_data/
 !first_submission/data/test_data/
-scripts/
-app/ranker*.py
-app/scorer_worker/data
-debug/
-
-# Sensitive data
-dante/osomerank/data
-dante/osomerank/models
-rc-extension/
-report/
-src/osomerank/config_confidential.ini
-
-# App
-app/job_scheduler/
-app/sandbox_worker/
-app/scorer_worker/make_fake_request.py
-app/ranking_server/ranking_server_debug.py
 
 # VIM swap files
 .*.swp
