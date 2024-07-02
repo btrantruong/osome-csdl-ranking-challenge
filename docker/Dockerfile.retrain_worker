@@ -1,0 +1,24 @@
+FROM python:3.12
+
+WORKDIR /app
+
+RUN mkdir -p /app/data
+RUN mkdir -p /app/models
+
+# Copy model training script & config
+COPY libs/osomerank/audience_diversity_BERTopic_Rockwell.py/ /app
+COPY libs/osomerank/config.ini /app
+
+# Install Poetry
+RUN pip install poetry
+
+# Copy only the necessary files to install dependencies with Poetry
+COPY pyproject.toml poetry.lock ./
+
+# Install dependencies using Poetry
+RUN poetry config virtualenvs.create false && poetry install --only main --no-interaction --no-ansi
+
+# Set the entrypoint to poetry run
+ENTRYPOINT ["poetry", "run"]
+
+CMD ["python" "audience_diversity_BERTopic_Rockwell.py"]
