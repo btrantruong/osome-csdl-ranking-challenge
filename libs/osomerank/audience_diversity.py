@@ -139,13 +139,7 @@ def ad_prediction(feed_posts, platform=None):
 
     try:
         for idx, feed_post in enumerate(feed_posts):
-            url_from_text = URL_from_text(feed_post["text"])
-            if url_from_text == "NA":
-                url_from_text = []
-
-            post_urls = feed_post["urls"] + url_from_text
-
-            for urll in post_urls:
+            for urll in feed_post["urls"]:
                 if not any([platform_url in urll for platform_url in platform_urls]):
                     urls_index.append(idx)
                     urls_available.append(urll)
@@ -174,27 +168,16 @@ def ad_prediction(feed_posts, platform=None):
         return audience_diversity_val
 
 
-def ad_prediction_single(feed_post, platform):
-    url_available = ""
-
+def ad_prediction_single(url_available, platform):
     audience_diversity_val = -1000
 
     try:
-        if platform == "twitter":
-            if feed_post["urls"]:
-                url_available = feed_post["urls"]
 
-        else:
-            if URL_from_text(feed_post["text"]) != "NA":
-                url_available = URL_from_text(feed_post["text"])
-
-        if url_available:
-            # url_available = process_URL(url_available)
-            domain = ".".join(url_available.split("/")[2].split(".")[-2:])
-            if domain in audience_diversity_domains:
-                audience_diversity_val = pd_audience_diversity_URLs.loc[
-                    pd_audience_diversity_URLs["private_domain"] == domain
-                ]["visitor_var"].values[0]
+        domain = ".".join(url_available.split("/")[2].split(".")[-2:])
+        if domain in audience_diversity_domains:
+            audience_diversity_val = pd_audience_diversity_URLs.loc[
+                pd_audience_diversity_URLs["private_domain"] == domain
+            ]["visitor_var"].values[0]
 
         return audience_diversity_val
 
