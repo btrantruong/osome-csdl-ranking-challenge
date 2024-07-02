@@ -1,21 +1,19 @@
-import json
+from bisect import bisect
+# from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
-from concurrent.futures.thread import ThreadPoolExecutor
+import sys
 
-import uvicorn
-import redis
 from fastapi import FastAPI
-from utils import multisort, clean_text
-import test_data
-from bisect import bisect
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
-import sys
+import redis
+import uvicorn
+
+from utils import multisort, clean_text
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from scorer_worker.scorer_basic import compute_batch_scores
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,7 +74,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_score)
-        ad_score = ad_scores[item_id] if ad_score != -1000 else td_scores[item_id]
+        ad_score = ad_scores[item_id] if ad_scores[item_id] != -1000 else td_scores[item_id]
 
         processed_item = {
             "id": item_id,
