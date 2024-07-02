@@ -145,7 +145,7 @@ def ad_prediction(feed_posts, platform=None):
                     urls_available.append(urll)
 
         if urls_available:
-            urls_available_unshortened = unshorten(urls_available, cache_redis=True)
+            urls_available_unshortened = unshorten(*urls_available, cache_redis=True)
             # urls_available_unshortened = process_URL_multiple(urls_available)
         else:
             urls_available_unshortened = []
