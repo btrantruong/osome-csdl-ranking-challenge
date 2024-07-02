@@ -53,5 +53,5 @@ Put all the folders (prediction models and data) from this [Google Drive folder]
 
 Your personal machine might fill up when repeatedly building all these docker images and volumes. To clear space, run:
 
-1. `sudo docker systemctl prune -a`
+1. `sudo docker system prune -a`
 2. `sudo docker volume prune -a`
