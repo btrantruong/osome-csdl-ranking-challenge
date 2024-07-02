@@ -186,11 +186,11 @@ app/ranker*.py
 app/scorer_worker/data
 
 # Sensitive data
-libs/osomerank/data
-libs/osomerank/models
+src/osomerank/data
+src/osomerank/models
 rc-extension/
 report/
-libs/osomerank/config_confidential.ini
+src/osomerank/config_confidential.ini
 
 # App
 app/job_scheduler/
