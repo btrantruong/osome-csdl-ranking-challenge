@@ -76,6 +76,9 @@ def td_prediction(feed_posts, platform=None, default=-1000):
         posts.
     """
     global TD_DATA, TD_MODEL
+    if TD_DATA is None or TD_MODEL is None:
+        raise RuntimeError("Topic diversity data/models have not been loaded! "
+                           f"Call {__name__}.{load_td_data.__name__}() first.")
     audience_diversity_val = [default] * len(feed_posts)
     try:
         sm_texts_processed = [feed_post["text"] for feed_post in feed_posts]
