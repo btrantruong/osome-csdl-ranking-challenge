@@ -153,10 +153,8 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     global _DF, _PAT, _PLATFORM_PAT
     if _DF is None or _PAT is None:
-        raise RuntimeError(
-            "Audience diversity data have not been loaded! "
-            f"Call {__name__}.{load_ad_data.__name__}() first."
-        )
+        raise RuntimeError("Audience diversity data have not been loaded! "
+                           f"Call {__name__}.{load_ad_data.__name__}() first.")
     urls_available = []
     urls_index = []
     audience_diversity_val = []
