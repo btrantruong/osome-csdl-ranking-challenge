@@ -12,10 +12,15 @@ import sys
 
 from datetime import datetime
 
+# External dependencies imports
 import boto3
+import platformdirs
 
 # Root logger
 _root_logger = None
+
+# Configuration files
+_config = None
 
 # limit 'from .utils import *' to only these functions/variables
 __all__ = ['getconfig', 'gets3', 'remove_urls', 'clean_text',
@@ -23,11 +28,38 @@ __all__ = ['getconfig', 'gets3', 'remove_urls', 'clean_text',
            'get_logger']
 
 
-def getconfig():
-    # XXX use platformdirs
-    config = configparser.ConfigParser()
-    config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
-    return config
+def getconfig(fn="config.ini"):
+    """
+    Load provided configuration file. The search path includes, in this order:
+        - The current working directory
+        - The user config directory per XDG specs
+        - The site config directory per XDG specs
+        - The module's location within the installed package
+
+    We use platformdirs to follow XDG specs for user/site config directories.
+    Missing files are silently ignored. If the user config directories does not
+    exist, it is created for the purpose. If configuration file(s) have been
+    already loaded, return previously loaded files.
+    """
+    global _config
+    # Do not reload config if already loaded
+    if _config is not None:
+        return _config
+    cwd_config_path = os.getcwd()
+    user_config_path = platformdirs.user_config_path("dante", ensure_exists=True)
+    site_config_path = platformdirs.site_config_path("dante")
+    py_config_path = os.path.dirname(__file__)
+    conf_search_path = [
+        cwd_config_path,
+        user_config_path,
+        site_config_path,
+        py_config_path,
+    ]
+    conf_search_path = [os.path.join(p, fn) for p in conf_search_path]
+    _config = configparser.ConfigParser()
+    found_files = _config.read(conf_search_path)
+    get_logger(__name__).info(f"Found configuration: {found_files}")
+    return _config
 
 
 def gets3(resource=False):
