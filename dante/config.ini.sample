@@ -54,5 +54,8 @@ DEADLINE_SECONDS = 10
 ; database =
 ; user =
 ; password =
+<<<<<<<< HEAD:dante/config.ini.sample
 
 ; :vim:ft=conf:
+========
+>>>>>>>> dced9d5 (Removed .ini file from versioning, provide config.ini.sample file instead.):config.ini.sample
