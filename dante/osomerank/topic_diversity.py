@@ -27,10 +27,10 @@ def load_td_data():
     global TD_DATA, TD_MODEL
     logger = get_logger(__name__)
     if TD_DATA is not None:
-        logger.warn(
-            "Topic diversity data and model have been already loaded! "
-            "Reloading from scratch."
-        )
+        logger.warn("Topic diversity data and model have been already loaded! "
+                    "Reloading from scratch.")
+    else:
+        logger.info("Loading topic diversity data and model.")
     config = getconfig()
     cache_path = getcachedir()
     prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
