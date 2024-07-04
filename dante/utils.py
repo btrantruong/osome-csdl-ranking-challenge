@@ -73,7 +73,8 @@ def getconfig(fn="config.ini", force_reload=False):
         return _config
     cwd_config_path = os.getcwd()
     # XXX switch to __package__ (once this is at the main package level)
-    user_config_path = platformdirs.user_config_path("dante", ensure_exists=True)
+    user_config_path = platformdirs.user_config_path("dante",
+                                                     ensure_exists=True)
     site_config_path = platformdirs.site_config_path("dante")
     py_config_path = os.path.dirname(__file__)
     conf_search_path = [
@@ -100,9 +101,12 @@ def getconfig(fn="config.ini", force_reload=False):
     found_files = _config.read(conf_search_path)
     logger = get_logger(__name__)
     if len(found_files) == 0:
-        # Package has not been configured yet, copy sample ini to user conf dir and retry
-        sample_conf_path = str(files("dante.osomerank").joinpath(fn + '.sample'))
-        logger.info(f"No config found! Copying {sample_conf_path} to {user_config_path}")
+        # Package has not been configured yet, copy sample ini to user conf dir
+        # and retry
+        sample_fn = fn + '.sample'
+        sample_conf_path = str(files("dante.osomerank").joinpath(sample_fn))
+        logger.warning(f"No config found! Copying {sample_conf_path} to "
+                       "{user_config_path}")
         shutil.copy(sample_conf_path, os.path.join(user_config_path, fn))
         found_files = _config.read(conf_search_path)
     logger.info(f"Found configuration: {found_files}")
