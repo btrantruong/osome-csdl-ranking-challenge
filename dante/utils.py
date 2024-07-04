@@ -11,7 +11,6 @@ import os
 import pstats
 import re
 import shutil
-import sys
 
 from datetime import datetime
 from importlib.resources import files
@@ -30,7 +29,6 @@ _config = None
 # limit 'from .utils import *' to only these functions/variables
 __all__ = ['getcachedir', 'getconfig', 'fetchfroms3', 'remove_urls',
            'clean_text', 'profileit', 'prof_to_csv', 'profile', 'save_to_json',
-           'get_logger']
 
 
 def getcachedir():

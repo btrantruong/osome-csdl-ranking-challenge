@@ -19,6 +19,7 @@ import os
 from collections import defaultdict
 
 # External dependencies imports
+from platformdirs import user_cache_dir
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,

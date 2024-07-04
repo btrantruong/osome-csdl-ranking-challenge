@@ -86,8 +86,6 @@ def load_ad_data():
     if _DF is not None:
         logger.warn("Audience diversity data have been already loaded! "
                     "Reloading from scratch.")
-    else:
-        logger.info("Loading audience diversity data.")
     config = getconfig()
     cache_path = getcachedir()
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
