@@ -1,12 +1,20 @@
+from .utils import get_logger
+logger = get_logger(__name__)  # noqa
+
 from .utils import * # noqa: F401,F403
-logger = get_logger()  # noqa
-logger.info(f"imported {utils}") # noqa
+logger.info(f"Imported {utils.__file__}")  # noqa
 
-from .audience_diversity import * # noqa: F401
-logger.info(f"loaded {audience_diversity}") # noqa
+from .audience_diversity import *  # noqa: F401
+logger.info(f"Imported {audience_diversity.__file__}")  # noqa
 
-from .topic_diversity import * # noqa: F401
-logger.info(f"loaded {topic_diversity}")  # noqa
+from .topic_diversity import *  # noqa: F401
+logger.info(f"Imported {topic_diversity.__file__}")  # noqa
 
 from .elicited_response import * # noqa: F401
-logger.info(f"loaded {elicited_response}") # noqa
+logger.info(f"Imported {elicited_response.__file__}")  # noqa
+
+
+def load_all():
+    load_ad_data()  # noqa
+    load_td_data()  # noqa
+    load_er_models()  # noqa

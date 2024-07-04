@@ -22,7 +22,7 @@ from .utils import get_logger
 
 
 def main():
-    logger = get_logger()
+    logger = get_logger(__name__)
     logger.info("Started topic model update.")
     data = pd.read_csv("data/political_kaggle_tweets.csv")
     if 'Unnamed: 0' in data.columns:
