@@ -13,6 +13,7 @@ import os
 from collections import defaultdict
 
 # External dependencies imports
+from platformdirs import user_cache_dir
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -20,7 +21,7 @@ from transformers import (
 )
 
 # Package imports
-from .utils import getconfig, get_logger, gets3
+from .utils import getconfig, get_logger, fetchfroms3
 
 config = getconfig()
 
@@ -34,33 +35,17 @@ def load_er_models():
         logger.warn("Models have been already loaded! Reloading from scratch.")
     model_names = ["toxicity_trigger", "attracted_sentiment"]
     platforms = ["twitter", "reddit"]
-    # XXX use platformdirs
-    libs_path = os.path.dirname(__file__)
-    er_model_dir = os.path.join(libs_path,
-                                config.get("ELICITED_RESPONSE",
-                                           "elicited_response_dir"))
-    # Download and load models from S3
+    cache_path = user_cache_dir("dante")
+    prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
+    er_model_dir = os.path.join(cache_path, prefix)
     if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
-        # S3 config
-        s3 = gets3(config, resource=True)
-        s3_bucket = config.get("S3", "S3_BUCKET")
-        my_bucket = s3.Bucket(s3_bucket)
-        # Download models
-        ER_models = config.options("ELICITED_RESPONSE")
-        for model in ER_models:
-            model_dir = os.path.join(libs_path,
-                                     config.get("ELICITED_RESPONSE", model))
-            if not os.path.exists(model_dir):
-                os.makedirs(model_dir)
-            if not os.listdir(model_dir):
-                for obj in my_bucket.objects.filter(Prefix=model):
-                    my_bucket.download_file(obj.key, obj.key)
+        logger.warning("No cached model found! Retrieving from S3.")
+        fetchfroms3(prefix, cache_path)
     # load MODEL_PIPELINES
     for model_name in model_names:
         for platform in platforms:
-            model_path = os.path.join(libs_path,
-                                      config.get("ELICITED_RESPONSE",
-                                                 f"{model_name}_{platform}"))
+            mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
+            model_path = os.path.join(cache_path, mod_prefix)
             tokenizer = AutoTokenizer.from_pretrained(
                 pretrained_model_name_or_path=model_path
             )
