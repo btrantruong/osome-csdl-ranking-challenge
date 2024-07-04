@@ -225,8 +225,8 @@ def _setup_logging(level=logging.INFO):
     logger = logging.getLogger()
     logger.setLevel(level=level)
     logdir = platformdirs.user_log_dir(appname="dante",
-                                        ensure_exists=True)
-    path = os.path.join(logdir, f"dante.log")
+                                       ensure_exists=True)
+    path = os.path.join(logdir, "dante.log")
     # Configure formatter
     fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     formatter = logging.Formatter(fmt=fmt)
@@ -248,11 +248,12 @@ def _setup_logging(level=logging.INFO):
     logger.info(f"Logging messages to console and to {path}")
     return logger
 
+
 _logger = _setup_logging()
 
 
 def get_logger(name=None):
-    """ 
+    """
     Get logger for name (pass __name__ to log messages for your own module)
     """
     return logging.getLogger(name)
