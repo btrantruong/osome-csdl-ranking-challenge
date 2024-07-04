@@ -186,8 +186,8 @@ app/ranker*.py
 app/scorer_worker/data
 
 # Sensitive data
-src/osomerank/data
-src/osomerank/models
+dante/osomerank/data
+dante/osomerank/models
 rc-extension/
 report/
 src/osomerank/config_confidential.ini
