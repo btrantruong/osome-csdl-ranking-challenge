@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "osome-csdl-ranking-challenge"
+name = "dante"
 version = "0.1.0"
 description = "Testing ranking algorithms to improve social cohesion."
 authors = ["Giovanni Luca Ciampaglia <glciampagl@gmail.com>; Bao T. Truong <baotruon@iu.edu>"]
