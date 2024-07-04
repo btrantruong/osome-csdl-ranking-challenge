@@ -197,3 +197,6 @@ app/job_scheduler/
 app/sandbox_worker/
 app/scorer_worker/make_fake_request.py
 app/ranking_server/ranking_server_debug.py
+
+# VIM swap files
+.*.swp
