@@ -14,7 +14,8 @@ from datetime import datetime
 
 import boto3
 
-_logger = None
+# Root logger
+_root_logger = None
 
 # limit 'from .utils import *' to only these functions/variables
 __all__ = ['getconfig', 'gets3', 'remove_urls', 'clean_text',
@@ -166,42 +167,42 @@ def save_to_json(post_content, fpath):
         json.dump(post_content, file)
 
 
-# XXX review this: the __init__ in dante.osomerank is dropping the first INFO
-# log (for .utils)
-def _get_file_logger(path, also_print=False, level=logging.INFO):
-    """Create logger."""
-    # Create log_dir if it doesn't exist already
-    dirpath = os.path.dirname(path)
-    if not os.path.exists(dirpath):
-        os.makedirs(dirpath)
-    # Create logger and set level
-    logger = logging.getLogger(__name__)
+def _setup_logging(level=logging.INFO):
+    """Setup root logger for the package."""
+    # Get root logger and set level
+    logger = logging.getLogger()
     logger.setLevel(level=level)
+    # XXX use platformdirs instead of module's own path
+    libs_path = os.path.dirname(__file__)
+    # XXX use rotating logger instead of timestamped filename
+    config = getconfig()
+    logdirname = config.get("LOGGING", "log_dir")
+    logdirpath = os.path.join(libs_path, logdirname)
+    path = os.path.join(logdirpath, f"dante.log")
+    # Create logs dir if it doesn't exist already
+    if not os.path.exists(logdirpath):
+        os.makedirs(logdirpath)
+    fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     # Configure file handler
-    formatter = logging.Formatter(fmt="%(asctime)s:%(levelname)s:%(message)s")
+    formatter = logging.Formatter(fmt=fmt)
     fh = logging.FileHandler(path)
     fh.setFormatter(formatter)
     fh.setLevel(level=level)
     logger.addHandler(fh)
-    # XXX remove this -- it's causing duplicated messages
-    if also_print:
-        ch = logging.StreamHandler(sys.stdout)
-        ch.setFormatter(formatter)
-        ch.setLevel(level=level)
-        logger.addHandler(ch)
+    # Configure stream handler
+    ch = logging.StreamHandler()
+    ch.setFormatter(formatter)
+    ch.setLevel(level=level)
+    logger.addHandler(ch)
+    logger.info(f"Logging messages to console and to {path}")
     return logger
 
 
-def get_logger():
-    global _logger
-    # XXX use platformdirs instead of module's own path
-    libs_path = os.path.dirname(__file__)
-    formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
-    # XXX use rotating logger instead of timestamped filename
-    config = getconfig()
-    path = os.path.join(libs_path,
-                        config.get("LOGGING", "log_dir"),
-                        f"osomerank__{formatted_time}.log")
-    if _logger is None:
-        _logger = _get_file_logger(path, also_print=True)
-    return _logger
+def get_logger(name=None):
+    """ Get logger for name (pass __name__ to log messages for your own
+    module), making sure root logger has been set up """
+    global _root_logger
+    # Check root logger has been set up
+    if _root_logger is None:
+        _root_logger = _setup_logging()
+    return logging.getLogger(name)

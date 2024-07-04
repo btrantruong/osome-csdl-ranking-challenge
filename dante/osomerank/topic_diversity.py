@@ -29,8 +29,8 @@ TD_MODEL = None
 
 def load_td_data():
     global TD_DATA, TD_MODEL
-    logger = get_logger()
-    if TD_DATA is None:
+    logger = get_logger(__name__)
+    if TD_DATA is not None:
         logger.warn("Topic diversity data and model have been already loaded! "
                     "Reloading from scratch.")
     else:
@@ -93,7 +93,8 @@ def td_prediction(feed_posts, platform=None, default=-1000):
                     td_val - TD_MEAN
                 ) / TD_STD
     except Exception:
-        get_logger().exception("Error computing topic diversity scores")
+        get_logger(__name__).exception("Error computing topic "
+                                       "diversity scores")
         return [mean_topic_diversity] * len(feed_posts)
     for idx, ad in enumerate(audience_diversity_val):
         if ad == default:
@@ -112,7 +113,7 @@ def ad_prediction_single(feed_post, platform, default=-1000):
             if int(topic) != -1:
                 audience_diversity_val = TD_DATA[str(topic)]
     except Exception:
-        get_logger().exception("Error computing topic diversity score")
+        get_logger(__name__).exception("Error computing topic diversity score")
         return mean_topic_diversity
     if audience_diversity_val == default:
         audience_diversity_val = mean_topic_diversity

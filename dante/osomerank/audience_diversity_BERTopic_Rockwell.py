@@ -111,13 +111,13 @@ def fill_cache_with_url(urls_db, redis_client_obj):
             r = requests.head(uu, allow_redirects=True, timeout=10)
             redis_client_obj[uu] = r.url
         except Exception:
-            logger = get_logger()
+            logger = get_logger(__name__)
             logger.exception("Exception while filling cache with URLs")
             continue
 
 
 def main():
-    logger = get_logger()
+    logger = get_logger(__name__)
     logger.info("Started training of BertTopic model.")
     config = getconfig()
     s3 = gets3()

@@ -78,8 +78,8 @@ def load_ad_data():
     Download and load models from S3
     """
     global _DF, _PAT, _PLATFORM_PAT
-    logger = get_logger()
-    if _DF is None:
+    logger = get_logger(__name__)
+    if _DF is not None:
         logger.warn("Audience diversity data have been already loaded! "
                     "Reloading from scratch.")
     else:
@@ -150,5 +150,6 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
         return audience_diversity_val
     # XXX remove?
     except Exception:
-        get_logger().exception("Error computing audience diversity score")
+        get_logger(__name__).exception("Error computing audience "
+                                       "diversity score")
         return audience_diversity_val
