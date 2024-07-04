@@ -16,8 +16,8 @@ topic_diversity_dir = models/AD_rockwell
 td_1 = models/AD_rockwell/config.json
 td_2 = models/AD_rockwell/ctfidf_config.json
 td_3 = models/AD_rockwell/topic_embeddings.safetensors
-td_4= models/AD_rockwell/ctfidf.safetensors
-td_5 =models/AD_rockwell/BERTopic_diversity.json
+td_4 = models/AD_rockwell/ctfidf.safetensors
+td_5 = models/AD_rockwell/BERTopic_diversity.json
 td_6 = models/AD_rockwell/topics.json
 
 ; [S3]
