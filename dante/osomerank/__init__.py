@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from ..utils import get_logger
 logger = get_logger(__name__)  # noqa
 
@@ -20,10 +19,3 @@ def load_all():
     load_td_data()  # noqa
     load_er_models()  # noqa
     logger.info("Completed loading all model artifacts.")
-=======
-# from .audience_diversity import *
-from .elicited_response import *
-from .utils import *
-
-# from .unshorten_URLs import *
->>>>>>> 0db5997 (Converted libs to Python package (dante), convert app to submodule)
