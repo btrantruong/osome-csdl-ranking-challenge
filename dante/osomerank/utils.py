@@ -1,10 +1,12 @@
 """ Functions for profiling, text cleaning, logging, JSON """
 
+# Standard library imports
 import configparser
 import cProfile
 import io
 import json
 import logging
+import logging.handlers
 import os
 import pstats
 import re
@@ -204,20 +206,19 @@ def _setup_logging(level=logging.INFO):
     # Get root logger and set level
     logger = logging.getLogger()
     logger.setLevel(level=level)
-    # XXX use platformdirs instead of module's own path
-    libs_path = os.path.dirname(__file__)
-    # XXX use rotating logger instead of timestamped filename
-    config = getconfig()
-    logdirname = config.get("LOGGING", "log_dir")
-    logdirpath = os.path.join(libs_path, logdirname)
-    path = os.path.join(logdirpath, f"dante.log")
-    # Create logs dir if it doesn't exist already
-    if not os.path.exists(logdirpath):
-        os.makedirs(logdirpath)
+    logdir = platformdirs.user_log_dir(appname="dante",
+                                        ensure_exists=True)
+    path = os.path.join(logdir, f"dante.log")
+    # Configure formatter
     fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-    # Configure file handler
     formatter = logging.Formatter(fmt=fmt)
-    fh = logging.FileHandler(path)
+    # Remove any existing handler
+    for handler in logger.handlers:
+        logger.removeHandler(handler)
+    # Configure rotating file handler, keep 100MB logs max around
+    fh = logging.handlers.RotatingFileHandler(path,
+                                              maxBytes=1e7,
+                                              backupCount=10)
     fh.setFormatter(formatter)
     fh.setLevel(level=level)
     logger.addHandler(fh)
@@ -229,12 +230,11 @@ def _setup_logging(level=logging.INFO):
     logger.info(f"Logging messages to console and to {path}")
     return logger
 
+_logger = _setup_logging()
+
 
 def get_logger(name=None):
-    """ Get logger for name (pass __name__ to log messages for your own
-    module), making sure root logger has been set up """
-    global _root_logger
-    # Check root logger has been set up
-    if _root_logger is None:
-        _root_logger = _setup_logging()
+    """ 
+    Get logger for name (pass __name__ to log messages for your own module)
+    """
     return logging.getLogger(name)
