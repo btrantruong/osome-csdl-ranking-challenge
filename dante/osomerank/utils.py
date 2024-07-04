@@ -10,9 +10,11 @@ import logging.handlers
 import os
 import pstats
 import re
+import shutil
 import sys
 
 from datetime import datetime
+from importlib.resources import files
 
 # External dependencies imports
 import boto3
@@ -48,6 +50,7 @@ def getconfig(fn="config.ini"):
     if _config is not None:
         return _config
     cwd_config_path = os.getcwd()
+    # XXX switch to __package__ (once this is at the main package level)
     user_config_path = platformdirs.user_config_path("dante", ensure_exists=True)
     site_config_path = platformdirs.site_config_path("dante")
     py_config_path = os.path.dirname(__file__)
@@ -60,7 +63,14 @@ def getconfig(fn="config.ini"):
     conf_search_path = [os.path.join(p, fn) for p in conf_search_path]
     _config = configparser.ConfigParser()
     found_files = _config.read(conf_search_path)
-    get_logger(__name__).info(f"Found configuration: {found_files}")
+    logger = get_logger(__name__)
+    if len(found_files) == 0:
+        # Package has not been configured yet, copy sample ini to user conf dir and retry
+        sample_conf_path = str(files("dante.osomerank").joinpath(fn + '.sample'))
+        logger.info(f"No config found! Copying {sample_conf_path} to {user_config_path}")
+        shutil.copy(sample_conf_path, os.path.join(user_config_path, fn))
+        found_files = _config.read(conf_search_path)
+    logger.info(f"Found configuration: {found_files}")
     return _config
 
 
