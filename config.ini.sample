@@ -27,8 +27,8 @@ td_6 = models/AD_rockwell/topics.json
 ; S3_BUCKET = 
 
 ; [POSTGRES]
-; host=
-; port=
-; database=
-; user=
-; password=_rockwell
+; host =
+; port =
+; database =
+; user =
+; password =

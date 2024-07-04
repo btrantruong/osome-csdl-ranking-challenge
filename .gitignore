@@ -200,3 +200,6 @@ app/ranking_server/ranking_server_debug.py
 
 # VIM swap files
 .*.swp
+
+# Configuration files
+*.ini
