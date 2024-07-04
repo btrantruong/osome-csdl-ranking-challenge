@@ -55,3 +55,10 @@ Your personal machine might fill up when repeatedly building all these docker im
 
 1. `sudo docker system prune -a`
 2. `sudo docker volume prune -a`
+
+## Setting up development environment
+
+When developing, an optional dependency group for development is provided in pyproject file. This can be installed with:
+```
+poetry install --with=dev
+```

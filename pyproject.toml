@@ -5,12 +5,12 @@ description = "Testing ranking algorithms to improve social cohesion."
 authors = ["Giovanni Luca Ciampaglia <glciampagl@gmail.com>; Bao T. Truong <baotruon@iu.edu>"]
 license = "MIT"
 readme = "README.md"
-include = [
-    { path = "libs/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
-    { path = "libs/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },
-    { path = "libs/osomerank/models/ER/*/*.*", format = ["sdist", "wheel"] }
-]
 packages = [{include = "dante"}]
+# include = [
+#     { path = "dante/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
+#     { path = "dante/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },
+#     { path = "dante/osomerank/models/ER/*/*.*", format = ["sdist", "wheel"] }
+# ]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -40,12 +40,16 @@ uvicorn = "^0.30.1"
 platformdirs = "^4.2.2"
 
 
+[tool.poetry.group.dev]
+optional = true
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.2"
 flake8 = "^7.1.0"
 black = "^24.4.2"
 isort = "^5.13.2"
 requests = "^2.32.3"
+ipython = "^8.26.0"
 
 [build-system]
 requires = ["poetry-core"]
