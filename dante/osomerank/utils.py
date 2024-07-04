@@ -17,16 +17,9 @@ import boto3
 _logger = None
 
 # limit 'from .utils import *' to only these functions/variables
-__all__ = [
-    'getconfig',
-    'gets3', 
-    'remove_urls', 
-    'clean_text', 
-    'profileit', 
-    'prof_to_csv', 
-    'profile', 
-    'save_to_json', 
-    'get_logger']
+__all__ = ['getconfig', 'gets3', 'remove_urls', 'clean_text',
+           'profileit', 'prof_to_csv', 'profile', 'save_to_json',
+           'get_logger']
 
 
 def getconfig():
@@ -53,11 +46,11 @@ def gets3(resource=False):
     s3_region_name = config.get("S3", "S3_REGION_NAME")
     s3_access_key = config.get("S3", "S3_ACCESS_KEY")
     s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-    s3_bucket = config.get("S3", "S3_BUCKET")
+    # s3_bucket = config.get("S3", "S3_BUCKET")
     if resource:
-        s3 = boto3.resource(service_name="s3", 
-                            region_name=s3_region_name, 
-                            aws_access_key_id=s3_access_key, 
+        s3 = boto3.resource(service_name="s3",
+                            region_name=s3_region_name,
+                            aws_access_key_id=s3_access_key,
                             aws_secret_access_key=s3_access_key_secret)
     else:
         s3 = boto3.client(service_name="s3",
@@ -76,7 +69,8 @@ def remove_urls(text, replacement_text=""):
 
 
 def clean_text(text):
-    text = re.sub(r"(?:\@|https?\://)\S+", "", text)  # remove mentions and URLs
+    # remove mentions and URLs
+    text = re.sub(r"(?:\@|https?\://)\S+", "", text)
     text = text.lower()  # lowercase the text
     remove_tokens = [
         "&gt;",
@@ -93,9 +87,8 @@ def clean_text(text):
     ]
     for t in remove_tokens:  # remove unwanted tokens
         text = text.replace(t, "")
-    text = " ".join(
-        re.split("\s+", text, flags=re.UNICODE)
-    )  # remove unnecessary white space
+    # remove unnecessary white space
+    text = " ".join(re.split("\\s+", text, flags=re.UNICODE))
     text = text.strip()  # strip
     # return None if text is too short
     if len(text.strip().split(" ")) <= 3:
@@ -122,12 +115,18 @@ def profileit(func):
 # Code from https://gist.github.com/ralfstx/a173a7e4c37afa105a66f371a09aa83e
 def prof_to_csv(prof: cProfile.Profile):
     out_stream = io.StringIO()
-    pstats.Stats(prof, stream=out_stream).sort_stats("cumulative").print_stats()
+    (
+        pstats
+        .Stats(prof, stream=out_stream)
+        .sort_stats("cumulative")
+        .print_stats()
+    )
     # pstats.print_stats()
     result = out_stream.getvalue()
     # chop off header lines
     result = "ncalls" + result.split("ncalls")[-1]
-    lines = [",".join(line.rstrip().split(None, 5)) for line in result.split("\n")]
+    lines = [",".join(line.rstrip().split(None, 5))
+             for line in result.split("\n")]
     return "\n".join(lines)
 
 
@@ -136,7 +135,8 @@ def profile(func):
     def wrapper(*args, **kwargs):
         now = datetime.now()
         timestr = now.strftime("%m%d%Y_%H%M%S")
-        datafn = func.__name__ + "_profile_%s.csv" % timestr  # Name the data file sensibly
+        # Name the data file sensibly
+        datafn = func.__name__ + "_profile_%s.csv" % timestr
         prof = cProfile.Profile()
         retval = prof.runcall(func, *args, **kwargs)
         csv_line = prof_to_csv(prof)
@@ -166,11 +166,13 @@ def save_to_json(post_content, fpath):
         json.dump(post_content, file)
 
 
+# XXX review this: the __init__ in dante.osomerank is dropping the first INFO
+# log (for .utils)
 def _get_file_logger(path, also_print=False, level=logging.INFO):
     """Create logger."""
     # Create log_dir if it doesn't exist already
-    dirpath = os.dirname(path)
-    if not os.exists(dirpath):
+    dirpath = os.path.dirname(path)
+    if not os.path.exists(dirpath):
         os.makedirs(dirpath)
     # Create logger and set level
     logger = logging.getLogger(__name__)
@@ -181,6 +183,7 @@ def _get_file_logger(path, also_print=False, level=logging.INFO):
     fh.setFormatter(formatter)
     fh.setLevel(level=level)
     logger.addHandler(fh)
+    # XXX remove this -- it's causing duplicated messages
     if also_print:
         ch = logging.StreamHandler(sys.stdout)
         ch.setFormatter(formatter)
@@ -195,10 +198,10 @@ def get_logger():
     libs_path = os.path.dirname(__file__)
     formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
     # XXX use rotating logger instead of timestamped filename
+    config = getconfig()
     path = os.path.join(libs_path,
                         config.get("LOGGING", "log_dir"),
-                        f"osomerank__{formatted_time}.log"),
-    if _logger is not None:
+                        f"osomerank__{formatted_time}.log")
+    if _logger is None:
         _logger = _get_file_logger(path, also_print=True)
     return _logger
-
