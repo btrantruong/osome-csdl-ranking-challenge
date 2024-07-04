@@ -3,99 +3,86 @@
 """
 Created on Tue June 4 2024
 
-@author: Ozgur (modified by Bao)
+@author: Ozgur (modified by Bao, Giovanni)
 """
 
+__all__ = ['har_prediction', 'ar_prediction', 'load_er_models']
+
+# Standard library imports
+import os
+from collections import defaultdict
+
+# External dependencies imports
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
     TextClassificationPipeline,
 )
-import re
-import configparser
-import os
-from collections import defaultdict
-from osomerank.utils import get_file_logger, clean_text
 
-libs_path = os.path.dirname(__file__)
-config = configparser.ConfigParser()
-config.read(os.path.join(libs_path, "config.ini"))
+# Package imports
+from .utils import getconfig, get_logger, gets3
 
-from datetime import datetime
+config = getconfig()
 
-formatted_time = datetime.now().strftime("%m%d%Y_%H:%M:%S")
-
-logger = get_file_logger(
-    os.path.join(libs_path, config.get("LOGGING", "log_dir")),
-    os.path.join(
-        libs_path,
-        config.get("LOGGING", "log_dir"),
-        f"rank_er__{formatted_time}.log",
-    ),
-    also_print=True,
-)
-
-model_names = ["toxicity_trigger", "attracted_sentiment"]
-platforms = ["twitter", "reddit"]
-
-er_model_dir = os.path.join(
-    libs_path, config.get("ELICITED_RESPONSE", "elicited_response_dir")
-)
-
-# Download and load models from S3
-if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
-    # S3 config
-    s3_region_name = config.get("S3", "S3_REGION_NAME")
-    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-    s3_bucket = config.get("S3", "S3_BUCKET")
-
-    s3 = boto3.resource(
-        service_name="s3",
-        region_name=s3_region_name,
-        aws_access_key_id=s3_access_key,
-        aws_secret_access_key=s3_access_key_secret,
-    )
-
-    my_bucket = s3.Bucket(s3_bucket)
-
-    # Download models
-    ER_models = config.options("ELICITED_RESPONSE")
-    for model in ER_models:
-        model_dir = os.path.join(libs_path, config.get("ELICITED_RESPONSE", model))
-        if not os.path.exists(model_dir):
-            os.makedirs(model_dir)
-        if not os.listdir(model_dir):
-            for obj in my_bucket.objects.filter(Prefix=model):
-                my_bucket.download_file(obj.key, obj.key)
-
-# load MODEL_PIPELINES
 MODEL_PIPELINES = defaultdict()
-for model_name in model_names:
-    for platform in platforms:
-        logger.info(f"Loading {model_name}_{platform} model..")
-        model_path = os.path.join(
-            libs_path, config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
-        )
-        tokenizer = AutoTokenizer.from_pretrained(
-            pretrained_model_name_or_path=model_path
-        )
-        model = AutoModelForSequenceClassification.from_pretrained(
-            pretrained_model_name_or_path=model_path,
-            num_labels=1,
-            ignore_mismatched_sizes=True,
-        )
-        pipeline = TextClassificationPipeline(
-            model=model,
-            tokenizer=tokenizer,
-            max_length=512,
-            truncation=True,
-            batch_size=8,
-            # top_k=None,
-            # device="cuda",  # uncomment if GPU is available
-        )
-        MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
-        logger.info(f"Loaded {model_name}_{platform} model.")
+
+
+def load_er_models():
+    global MODEL_PIPELINES
+    logger = get_logger()
+    if MODEL_PIPELINES:  # non-empty dict
+        logger.warn("Models have been already loaded! Reloading from scratch.")
+    else:
+        logger.info("Loading models.")
+    model_names = ["toxicity_trigger", "attracted_sentiment"]
+    platforms = ["twitter", "reddit"]
+    # XXX use platformdirs
+    libs_path = os.path.dirname(__file__)
+    er_model_dir = os.path.join(libs_path,
+                                config.get("ELICITED_RESPONSE",
+                                           "elicited_response_dir"))
+    # Download and load models from S3
+    if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
+        # S3 config
+        s3 = gets3(config, resource=True)
+        s3_bucket = config.get("S3", "S3_BUCKET")
+        my_bucket = s3.Bucket(s3_bucket)
+        # Download models
+        ER_models = config.options("ELICITED_RESPONSE")
+        for model in ER_models:
+            model_dir = os.path.join(libs_path,
+                                     config.get("ELICITED_RESPONSE", model))
+            if not os.path.exists(model_dir):
+                os.makedirs(model_dir)
+            if not os.listdir(model_dir):
+                for obj in my_bucket.objects.filter(Prefix=model):
+                    my_bucket.download_file(obj.key, obj.key)
+    # load MODEL_PIPELINES
+    for model_name in model_names:
+        for platform in platforms:
+            logger.info(f"Loading {model_name}_{platform} model..")
+            model_path = os.path.join(libs_path,
+                                      config.get("ELICITED_RESPONSE",
+                                                 f"{model_name}_{platform}"))
+            tokenizer = AutoTokenizer.from_pretrained(
+                pretrained_model_name_or_path=model_path
+            )
+            model = AutoModelForSequenceClassification.from_pretrained(
+                pretrained_model_name_or_path=model_path,
+                num_labels=1,
+                ignore_mismatched_sizes=True,
+            )
+            pipeline = TextClassificationPipeline(
+                model=model,
+                tokenizer=tokenizer,
+                max_length=512,
+                truncation=True,
+                batch_size=8,
+                # top_k=None,
+                # device="cuda",  # uncomment if GPU is available
+            )
+            MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
+            logger.info(f"Loaded {model_name}_{platform} model.")
 
 
 def har_prediction(texts, platform):
@@ -103,23 +90,31 @@ def har_prediction(texts, platform):
     Calculates the HArmful Response (HaR) score for a given social media post.
 
     Parameters:
-    texts (list of str): texts from social media posts.
-    platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
+        texts (list of str): texts from social media posts.
+
+        platform (str): the type of social media: {'twitter', 'reddit',
+            'facebook'}
 
     Returns:
-    HaR score (float): The predicted HaR score for a feed_post
+        HaR score (float): The predicted HaR score for a feed_post
     """
+    global MODEL_PIPELINES
+    if not MODEL_PIPELINES:  # empty dict
+        raise RuntimeError("Models have not been loaded! "
+                           f"Call {load_er_models.__qualname__}() first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
         model = MODEL_PIPELINES["toxicity_trigger_reddit"]
-
     try:
-        scores = [res["score"] for res in model.predict(texts)]  # generate the score
+        # generate the score
+        scores = [res["score"] for res in model.predict(texts)]
         return scores
     except Exception as e:
+        logger = get_logger()
         logger.exception(e)
-        # .54 is the avg score generated by the model for a test set of 250k posts
+        # .54 is the avg score generated by the model for a test set of 250k
+        # posts
         return [0.54] * len(texts)
 
 
@@ -128,22 +123,29 @@ def ar_prediction(texts, platform):
     Calculates the Affect Response (AR) score for a given social media post.
 
     Parameters:
-    texts (list of str): texts from social media posts.
-    platform (str): the type of social media: {'twitter', 'reddit', 'facebook'}
+        texts (list of str): texts from social media posts.
+
+        platform (str): the type of social media: {'twitter', 'reddit',
+            'facebook'}
 
     Returns:
-    AR score (float): The predicted AR score for a feed_post
+        AR score (float): The predicted AR score for a feed_post
     """
+    global MODEL_PIPELINES
+    if not MODEL_PIPELINES:  # empty dict
+        raise RuntimeError("Models have not been loaded! "
+                           f"Call {load_er_models.__qualname__}() first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:
         model = MODEL_PIPELINES["attracted_sentiment_reddit"]
-
     try:
-        scores = [res["score"] for res in model.predict(texts)]  # generate the score
+        # generate the scores
+        scores = [res["score"] for res in model.predict(texts)]
         return scores
-
     except Exception as e:
+        logger = get_logger()
         logger.exception(e)
-        # .5 is the avg score generated by the model for a test set of 250k posts
+        # .5 is the avg score generated by the model for a test set of 250k
+        # posts
         return [0.5] * len(texts)

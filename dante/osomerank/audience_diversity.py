@@ -3,184 +3,152 @@
 """
 Created on Sat Apr 13 16:06:26 2024
 
-@author: Saumya, modified by Bao
+@author: Saumya, modified by Bao and Giovanni
 
-Functions to calculate the audience diversity of a single or a list of posts. The model is trained on the audience diversity of the URLs in the NewsGuard dataset.
-Inputs: 
-    - 
+Functions to calculate the audience diversity of a single or a list of posts.
+The model is trained on the audience diversity of the URLs in the NewsGuard
+dataset.
+
+Inputs:
+    - ???
 """
 
-import pandas as pd
-import re
-import requests
-import traceback
-import boto3
+__all__ = ['ad_prediction', 'load_ad_data']
+
+# standard library imports
 import io
+import os
+import re
+
+from urllib.parse import urlsplit
+
+# external dependencies imports
+import pandas as pd
+
 from unshorten_fast import unshorten
 
-import os
-import configparser
-
-AD_MEAN = 4.86
-AD_STD = 1.64
+# Package imports
+from .utils import getconfig, get_logger, gets3
 
 platform_urls = [
-    "twitter.com",
-    "x.com",
-    "youtube.com",
-    "youtu.be",
-    "pubmed.ncbi.nlm.nih.gov",
-    "ncbi.nlm.nih.gov",
-    "tumblr.com",
-    "wikipedia.org",
-    "reddit.com",
-    "facebook.com",
-    "medium.com",
-    "pbs.twimg",
     "amazon.com",
+    "bing.com",
+    # "chatgpt.com",
+    "discord.com",
+    "duckduckgo.com",
     "ebay.com",
     "etsy.com",
+    "facebook.com",
     "flickr.com",
     "google.com",
-    "yahoo.com",
     "imgur.com",
     "instagram.com",
-    "tiktok.com",
-    "yelp.com",
     "linkedin.com",
-    "bing.com",
-    "discord.com",
-    "twitch.tv",
-    "quora.com",
-    "duckduckgo.com",
-    # "chatgpt.com",
+    "medium.com",
+    "ncbi.nlm.nih.gov",
     # "openai.com",
+    "pbs.twimg.com",
+    "pubmed.ncbi.nlm.nih.gov",
+    "quora.com",
+    "reddit.com",
+    "tiktok.com",
+    "tumblr.com",
+    "twitch.tv",
+    "twitter.com",
+    "wikipedia.org",
+    "x.com",
+    "yahoo.com",
+    "yelp.com",
+    "youtu.be",
+    "youtube.com",
 ]
 
-libs_path = os.path.dirname(__file__)
-config = configparser.ConfigParser()
-config.read(os.path.join(libs_path, "config.ini"))
 
-ad_model_path = os.path.join(
-    libs_path, config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
-)
-# Download and load models from S3
-if not os.path.exists(ad_model_path):
-    # S3 config
-    s3_region_name = config.get("S3", "S3_REGION_NAME")
-    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-    s3_bucket = config.get("S3", "S3_BUCKET")
-
-    s3 = boto3.client(
-        service_name="s3",
-        region_name=s3_region_name,
-        aws_access_key_id=s3_access_key,
-        aws_secret_access_key=s3_access_key_secret,
-    )
-    response = s3.get_object(
-        Filename=ad_model_path,
-        Bucket=s3_bucket,
-        Key=config.get("AUDIENCE_DIVERSITY", "audience_diversity_file"),
-    )
-
-    pd_audience_diversity_URLs = pd.read_csv(io.BytesIO(response["Body"].read()))
-else:
-    # TODO: Need to remove domains whih are platform corref from NewsGuard data
-    pd_audience_diversity_URLs = pd.read_csv(ad_model_path)
-
-pd_audience_diversity_URLs = pd_audience_diversity_URLs.loc[
-    pd_audience_diversity_URLs["n_visitors"] >= 10
-]
-audience_diversity_domains = (
-    pd_audience_diversity_URLs["private_domain"].unique().tolist()
-)
+def _list_to_pattern(*args):
+    return re.compile("|".join([d + "$" for d in args]))
 
 
-def URL_from_text(myString):
-    if not re.search("(?P<url>https?://[^\s]+)", myString):
-        return "NA"
-    return re.search("(?P<url>https?://[^\s]+)", myString).group("url")
+_DF = None  # data frame
+_PAT = None  # compiled regexp
+_PLATFORM_PAT = _list_to_pattern(*platform_urls)
 
 
-def process_URL(url):
-    try:
-        r = requests.head(url, allow_redirects=True, timeout=10)
-        return r.url
-    except Exception:
-        return url
+def load_ad_data():
+    """
+    Download and load models from S3
+    """
+    global _DF, _PAT, _PLATFORM_PAT
+    logger = get_logger()
+    if _DF is None:
+        logger.warn("Audience diversity data have been already loaded! "
+                    "Reloading from scratch.")
+    else:
+        logger.info("Loading audience diversity data.")
+    config = getconfig()
+    libs_path = os.path.dirname(__file__)
+    fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
+    ad_model_path = os.path.join(libs_path, fn)
+    COLS = ['n_visitors', 'private_domain', 'visitor_var']
+    if not os.path.exists(ad_model_path):
+        s3 = gets3()
+        s3_bucket = config.get("S3", "S3_BUCKET")
+        response = s3.get_object(Filename=ad_model_path,
+                                 Bucket=s3_bucket, Key=fn)
+        _DF = pd.read_csv(io.BytesIO(response["Body"].read()), usecols=COLS)
+    else:
+        # TODO: Need to remove domains whih are platform corref from NewsGuard
+        # data
+        _DF = pd.read_csv(ad_model_path, usecols=COLS)
+    _DF = _DF.query("n_visitors >= 10")
+    _DF.set_index("private_domain", inplace=True)
+    _ad_mean = _DF['visitor_var'].mean()
+    _ad_std = _DF['visitor_var'].std()
+    _DF['visitor_var'] = (_DF['visitor_var'] - _ad_mean) / _ad_std
+    _PAT = _list_to_pattern(*_DF.index)
 
 
-def process_URL_multiple(urls):
-    res = []
-    for url in urls:
-        try:
-            r = requests.head(url, allow_redirects=True, timeout=10)
-            res.append(r.url)
-        except Exception:
-            res.append(url)
-    return res
-
-
-def ad_prediction(feed_posts, platform=None):
+def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     Calculates the audience diversity of a list of posts.
+
     Args:
-        feed_posts (list of dict): list of posts where each dict is a post with the keys: {"id", "text", "urls"}
+        feed_posts (list of dict): list of posts where each dict is a post with
+            the keys: {"id", "text", "urls"}
+
         platform (str): platform type: {"twitter", "facebook", "reddit"}
 
+        default (int): default AD value to return for domains without a
+            diversity score
+
     Returns:
-        audience_diversity_val (list): the audience diversity scores of these posts.
+        audience_diversity_val (list): the audience diversity scores of these
+        posts.
     """
+    global _DF, _PAT, _PLATFORM_PAT
     urls_available = []
     urls_index = []
-
-    audience_diversity_val = [-1000] * len(feed_posts)
-
+    audience_diversity_val = [default] * len(feed_posts)
     try:
         for idx, feed_post in enumerate(feed_posts):
             for urll in feed_post["urls"]:
-                if not any([platform_url in urll for platform_url in platform_urls]):
+                # Not a platform
+                if re.search(_PLATFORM_PAT, urll) is None:
                     urls_index.append(idx)
                     urls_available.append(urll)
-
         if urls_available:
-            urls_available_unshortened = unshorten(*urls_available, cache_redis=True)
-            # urls_available_unshortened = process_URL_multiple(urls_available)
+            urls_available_unshortened = unshorten(*urls_available,
+                                                   cache_redis=True)
         else:
             urls_available_unshortened = []
-
         for idx, url_available in enumerate(urls_available_unshortened):
-            domain = ".".join(url_available.split("/")[2].split(".")[-2:])
-            if domain in audience_diversity_domains:
-                if not any([platform_url in domain for platform_url in platform_urls]):
-                    ad_val = pd_audience_diversity_URLs.loc[
-                        pd_audience_diversity_URLs["private_domain"] == domain
-                    ]["visitor_var"].values[0]
-                    audience_diversity_val[urls_index[idx]] = (
-                        ad_val - AD_MEAN
-                    ) / AD_STD
-
+            domain = urlsplit(url_available).netloc
+            if ((m := re.search(_PAT, domain)) is not None) \
+                    and (re.search(_PLATFORM_PAT, urll) is None):
+                matched_domain = m.group()
+                audience_diversity_val[urls_index[idx]] = \
+                    _DF.loc[matched_domain]['visitor_var']
         return audience_diversity_val
-
+    # XXX remove?
     except Exception:
-        print(traceback.format_exc())
-        return audience_diversity_val
-
-
-def ad_prediction_single(url_available, platform):
-    audience_diversity_val = -1000
-
-    try:
-
-        domain = ".".join(url_available.split("/")[2].split(".")[-2:])
-        if domain in audience_diversity_domains:
-            audience_diversity_val = pd_audience_diversity_URLs.loc[
-                pd_audience_diversity_URLs["private_domain"] == domain
-            ]["visitor_var"].values[0]
-
-        return audience_diversity_val
-
-    except Exception as e:
-        print(e)
+        get_logger().exception("Error computing audience diversity score")
         return audience_diversity_val
