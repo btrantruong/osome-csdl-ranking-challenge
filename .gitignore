@@ -187,6 +187,3 @@ first_submission/data/*
 
 # Configuration files
 *.ini
-
-# VIM swap files
-.*.swp
