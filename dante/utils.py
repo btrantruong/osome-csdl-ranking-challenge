@@ -11,6 +11,7 @@ import os
 import pstats
 import re
 import shutil
+import sys
 
 from datetime import datetime
 from importlib.resources import files
@@ -70,16 +71,18 @@ def getconfig(fn="config.ini", force_reload=False):
     # Do not reload config if already loaded unless forcing reload
     if not force_reload and _config is not None:
         return _config
-    logger = get_logger(__name__)
-    # Set up paths for sample and user config files
-    sample_conf_path = str(files(__package__).joinpath(fn + '.sample'))
-    user_conf_dir = user_config_dir("dante", ensure_exists=True)
-    user_conf_path = os.path.join(user_conf_dir, fn)
-    if not os.path.exists(os.path.join(user_conf_dir, fn)):
-        logger.warning(f"Could not find {user_conf_path}. "
-                       f"Creating blank config from {sample_conf_path}")
-        shutil.copy(sample_conf_path, user_conf_path)
-    # Create config parser object
+    cwd_config_path = os.getcwd()
+    # XXX switch to __package__ (once this is at the main package level)
+    user_config_path = platformdirs.user_config_path("dante", ensure_exists=True)
+    site_config_path = platformdirs.site_config_path("dante")
+    py_config_path = os.path.dirname(__file__)
+    conf_search_path = [
+        cwd_config_path,
+        user_config_path,
+        site_config_path,
+        py_config_path,
+    ]
+    conf_search_path = [os.path.join(p, fn) for p in conf_search_path]
     _config = configparser.ConfigParser()
     # Read default config from sample file bundled in the package
     with open(sample_conf_path) as f:
@@ -95,7 +98,14 @@ def getconfig(fn="config.ini", force_reload=False):
     if "DANTE_CONFIG_PATH" in os.environ:
         conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
     found_files = _config.read(conf_search_path)
-    logger.info(f"Additional configurations from: {found_files}")
+    logger = get_logger(__name__)
+    if len(found_files) == 0:
+        # Package has not been configured yet, copy sample ini to user conf dir and retry
+        sample_conf_path = str(files("dante.osomerank").joinpath(fn + '.sample'))
+        logger.info(f"No config found! Copying {sample_conf_path} to {user_config_path}")
+        shutil.copy(sample_conf_path, os.path.join(user_config_path, fn))
+        found_files = _config.read(conf_search_path)
+    logger.info(f"Found configuration: {found_files}")
     return _config
 
 
