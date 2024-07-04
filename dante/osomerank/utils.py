@@ -11,7 +11,6 @@ import os
 import pstats
 import re
 import shutil
-import sys
 
 from datetime import datetime
 from importlib.resources import files
@@ -27,7 +26,7 @@ _root_logger = None
 _config = None
 
 # limit 'from .utils import *' to only these functions/variables
-__all__ = ['getconfig', 'gets3', 'remove_urls', 'clean_text',
+__all__ = ['getconfig', 'fetchfroms3', 'remove_urls', 'clean_text',
            'profileit', 'prof_to_csv', 'profile', 'save_to_json',
            'get_logger']
 
@@ -80,35 +79,38 @@ def getconfig(fn="config.ini"):
     return _config
 
 
-def gets3(resource=False):
+def fetchfroms3(prefix, base_dir):
     """
-    Get S3 Bucket
+    Fetch data from configured S3 bucket
 
     Parameters
     ==========
-    config : configparser.ConfigParser
-        The configuration object for S3
+    prefix : str
+        Fetches all objects with this prefix from S3 bucket
 
-    return : bool
-        Whether to return a low-level service client (default) or a resource
-        service client (pass resource=True)
+    base_dir : str
+        Base path to destination dir where to copy objects
+
+    S3 settings are obtained from configuration file
     """
+    logger = get_logger(__name__)
     config = getconfig()
-    s3_region_name = config.get("S3", "S3_REGION_NAME")
-    s3_access_key = config.get("S3", "S3_ACCESS_KEY")
-    s3_access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-    # s3_bucket = config.get("S3", "S3_BUCKET")
-    if resource:
-        s3 = boto3.resource(service_name="s3",
-                            region_name=s3_region_name,
-                            aws_access_key_id=s3_access_key,
-                            aws_secret_access_key=s3_access_key_secret)
-    else:
-        s3 = boto3.client(service_name="s3",
-                          region_name=s3_region_name,
-                          aws_access_key_id=s3_access_key,
-                          aws_secret_access_key=s3_access_key_secret)
-    return s3
+    region_name = config.get("S3", "S3_REGION_NAME")
+    access_key = config.get("S3", "S3_ACCESS_KEY")
+    access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    bucket_name = config.get("S3", "S3_BUCKET")
+    logger.info(f"Fetching from s3://{bucket_name}/{prefix} region {region_name}")
+    s3 = boto3.resource(service_name="s3",
+                        region_name=region_name,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=access_key_secret)
+    bucket = s3.Bucket(bucket_name)
+    for obj in bucket.objects.filter(Prefix=prefix):
+        src_path = obj.key
+        dest_path = os.path.join(base_dir, obj.key)
+        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+        bucket.download_file(src_path, dest_path)
+        logger.info(f"Fetched: {dest_path}")
 
 
 def remove_urls(text, replacement_text=""):

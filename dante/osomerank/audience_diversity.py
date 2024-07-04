@@ -16,7 +16,6 @@ Inputs:
 __all__ = ['ad_prediction', 'load_ad_data']
 
 # standard library imports
-import io
 import os
 import re
 
@@ -24,11 +23,12 @@ from urllib.parse import urlsplit
 
 # external dependencies imports
 import pandas as pd
+from platformdirs import user_cache_dir
 
 from unshorten_fast import unshorten
 
 # Package imports
-from .utils import getconfig, get_logger, gets3
+from .utils import getconfig, get_logger, fetchfroms3
 
 platform_urls = [
     "amazon.com",
@@ -82,23 +82,18 @@ def load_ad_data():
     if _DF is not None:
         logger.warn("Audience diversity data have been already loaded! "
                     "Reloading from scratch.")
-    else:
-        logger.info("Loading audience diversity data.")
     config = getconfig()
-    libs_path = os.path.dirname(__file__)
+    cache_path = user_cache_dir("dante", ensure_exists=True)
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
-    ad_model_path = os.path.join(libs_path, fn)
+    path = os.path.join(cache_path, fn)
     COLS = ['n_visitors', 'private_domain', 'visitor_var']
-    if not os.path.exists(ad_model_path):
-        s3 = gets3()
-        s3_bucket = config.get("S3", "S3_BUCKET")
-        response = s3.get_object(Filename=ad_model_path,
-                                 Bucket=s3_bucket, Key=fn)
-        _DF = pd.read_csv(io.BytesIO(response["Body"].read()), usecols=COLS)
-    else:
-        # TODO: Need to remove domains whih are platform corref from NewsGuard
-        # data
-        _DF = pd.read_csv(ad_model_path, usecols=COLS)
+    if not os.path.exists(path):
+        logger.warning("No cached data found! Retrieving from S3.")
+        prefix = os.path.dirname(fn)
+        fetchfroms3(prefix, cache_path)
+    _DF = pd.read_csv(path, usecols=COLS)
+    logger.info(f"Loaded: {path}")
+    # TODO: Need to remove domains whih are platform corref from NewsGuard data
     _DF = _DF.query("n_visitors >= 10")
     _DF.set_index("private_domain", inplace=True)
     _ad_mean = _DF['visitor_var'].mean()

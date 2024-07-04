@@ -14,9 +14,10 @@ import os
 
 # External dependencies imports
 from bertopic import BERTopic
+from platformdirs import user_cache_dir
 
 # Package imports
-from .utils import getconfig, gets3, get_logger
+from .utils import getconfig, fetchfroms3, get_logger
 
 # XXX compute on the fly?
 TD_MEAN = 2.66
@@ -33,31 +34,20 @@ def load_td_data():
     if TD_DATA is not None:
         logger.warn("Topic diversity data and model have been already loaded! "
                     "Reloading from scratch.")
-    else:
-        logger.info("Loading topic diversity data and model.")
     config = getconfig()
-    libs_path = os.path.dirname(__file__)
-    model_dir = os.path.join(libs_path,
-                             config.get("TOPIC_DIVERSITY",
-                                        "topic_diversity_dir"))
-    # Download and load models from S3
-    if not os.path.exists(model_dir):
-        s3 = gets3()
-        s3_bucket = config.get("S3", "S3_BUCKET")
-        TD_files = [entry for entry in config.options("TOPIC_DIVERSITY")
-                    if "dir" not in entry]
-        os.makedirs(model_dir)
-        for td_file in TD_files:
-            s3.download_file(Filename=os.path.join(model_dir, td_file),
-                             Bucket=s3_bucket,
-                             Key=config.get("TOPIC_DIVERSITY", td_file))
-    # XXX use platformdirs
-    libs_path = os.path.dirname(__file__)
-    TD_MODEL = BERTopic.load(os.path.join(libs_path, model_dir))
-    fn = os.path.join(libs_path,
-                      config.get("AUDIENCE_DIVERSITY", "topic_diversity_json"))
-    with open(fn) as ff:
+    cache_path = user_cache_dir("dante", ensure_exists=True)
+    prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
+    cached_model_dir = os.path.join(cache_path, prefix)
+    if not os.path.exists(cached_model_dir):
+        logger.warning("No cached model found! Retrieving from S3.")
+        fetchfroms3(prefix, cache_path)
+    TD_MODEL = BERTopic.load(cached_model_dir)
+    logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
+    json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
+    cached_json_path = os.path.join(cache_path, json_fn)
+    with open(cached_json_path) as ff:
         TD_DATA = json.load(ff)
+    logger.info(f"Loaded topics data from: {cached_json_path}")
 
 
 def td_prediction(feed_posts, platform=None, default=-1000):
