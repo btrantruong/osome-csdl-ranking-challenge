@@ -23,12 +23,11 @@ from urllib.parse import urlsplit
 
 # external dependencies imports
 import pandas as pd
-from platformdirs import user_cache_dir
 
 from unshorten_fast import unshorten
 
 # Package imports
-from .utils import getconfig, get_logger, fetchfroms3
+from .utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 platform_urls = [
     "amazon.com",
@@ -83,7 +82,7 @@ def load_ad_data():
         logger.warn("Audience diversity data have been already loaded! "
                     "Reloading from scratch.")
     config = getconfig()
-    cache_path = user_cache_dir("dante", ensure_exists=True)
+    cache_path = getcachedir()
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
     path = os.path.join(cache_path, fn)
     COLS = ['n_visitors', 'private_domain', 'visitor_var']

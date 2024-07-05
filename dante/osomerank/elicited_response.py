@@ -13,7 +13,6 @@ import os
 from collections import defaultdict
 
 # External dependencies imports
-from platformdirs import user_cache_dir
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -21,7 +20,7 @@ from transformers import (
 )
 
 # Package imports
-from .utils import getconfig, get_logger, fetchfroms3
+from .utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 config = getconfig()
 
@@ -35,7 +34,7 @@ def load_er_models():
         logger.warn("Models have been already loaded! Reloading from scratch.")
     model_names = ["toxicity_trigger", "attracted_sentiment"]
     platforms = ["twitter", "reddit"]
-    cache_path = user_cache_dir("dante")
+    cache_path = getcachedir()
     prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
     er_model_dir = os.path.join(cache_path, prefix)
     if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
@@ -44,7 +43,8 @@ def load_er_models():
     # load MODEL_PIPELINES
     for model_name in model_names:
         for platform in platforms:
-            mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
+            mod_prefix = config.get("ELICITED_RESPONSE",
+                                    f"{model_name}_{platform}")
             model_path = os.path.join(cache_path, mod_prefix)
             tokenizer = AutoTokenizer.from_pretrained(
                 pretrained_model_name_or_path=model_path
@@ -83,7 +83,8 @@ def har_prediction(texts, platform):
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
         raise RuntimeError("Models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() first.")
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -116,7 +117,8 @@ def ar_prediction(texts, platform):
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
         raise RuntimeError("Elicited Response models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() first.")
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:

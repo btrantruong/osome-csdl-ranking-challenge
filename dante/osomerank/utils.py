@@ -26,9 +26,21 @@ _root_logger = None
 _config = None
 
 # limit 'from .utils import *' to only these functions/variables
-__all__ = ['getconfig', 'fetchfroms3', 'remove_urls', 'clean_text',
-           'profileit', 'prof_to_csv', 'profile', 'save_to_json',
+__all__ = ['getcachedir', 'getconfig', 'fetchfroms3', 'remove_urls',
+           'clean_text', 'profileit', 'prof_to_csv', 'profile', 'save_to_json',
            'get_logger']
+
+
+def getcachedir():
+    """
+    Get cache directory, ensuring it exists
+    """
+    try:
+        cache_dir = os.environ["DANTE_CACHE_DIR"]
+        os.makedirs(cache_dir, exist_ok=True)
+        return cache_dir
+    except KeyError:
+        return platformdirs.user_cache_dir("dante")
 
 
 def getconfig(fn="config.ini"):

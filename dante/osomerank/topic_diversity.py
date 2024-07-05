@@ -14,10 +14,9 @@ import os
 
 # External dependencies imports
 from bertopic import BERTopic
-from platformdirs import user_cache_dir
 
 # Package imports
-from .utils import getconfig, fetchfroms3, get_logger
+from .utils import getcachedir, getconfig, fetchfroms3, get_logger
 
 # XXX compute on the fly?
 TD_MEAN = 2.66
@@ -35,7 +34,7 @@ def load_td_data():
         logger.warn("Topic diversity data and model have been already loaded! "
                     "Reloading from scratch.")
     config = getconfig()
-    cache_path = user_cache_dir("dante", ensure_exists=True)
+    cache_path = getcachedir()
     prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
     cached_model_dir = os.path.join(cache_path, prefix)
     if not os.path.exists(cached_model_dir):

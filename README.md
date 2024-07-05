@@ -18,9 +18,15 @@ These variables are specified in `docker-compose.yml` (To be updated). Copied he
 | redis               | `redis://redis:6379`                         |
 | redis-celery-broker | `redis://redis-celery-broker:6380`           |
 
+### Environment Variables
+
+| Variable          | Description                                    |
+| -------------------------------------------------------------------|
+| `DANTE_CACHE_DIR` | Location for data / model cache                |
+
 ## How to run locally
 
-All commands are executed from the root directory.
+All commands are executed from the root directory of the repository.
 
 ### Setup
 
@@ -45,9 +51,21 @@ To (i) build the Docker images for all components and (ii) start them running in
 2. Run: e.g., `docker run ranker`
 
 
-### Add models artifacts to osomerank
+### Add models artifacts to dante
 
-Put all the folders (prediction models and data) from this [Google Drive folder](https://drive.google.com/drive/folders/1PCv57AxHhdwhkLGQbhT4o_6qke_NL2dC?usp=sharing) into `libs/osomerank`, keeping the folder names. 
+Download all the contents of this [Google Drive
+folder](https://drive.google.com/drive/folders/1PCv57AxHhdwhkLGQbhT4o_6qke_NL2dC?usp=sharing)
+into, keeping the folder names, locally. Then you can can run a component and
+use a bind mount to give it access to the models artifacts needed to run dante.
+For example:
+
+```shell
+export DANTE_CACHE_DIR=/path/to/files
+docker build -f docker/Dockerfile.ranker -t ranker .
+docker run --mount type=bind,src=${DANTE_CACHE_DIR},dst=/app/cache ranker
+```
+
+Where `/path/to/files` should be replaced with the path where you downloaded the Google Drive contents.
 
 ### Clearing Space
 
