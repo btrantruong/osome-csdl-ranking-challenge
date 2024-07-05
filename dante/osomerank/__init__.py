@@ -18,3 +18,4 @@ def load_all():
     load_ad_data()  # noqa
     load_td_data()  # noqa
     load_er_models()  # noqa
+    logger.info("Completed loading all model artifacts.")
