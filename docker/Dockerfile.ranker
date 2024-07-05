@@ -1,29 +1,37 @@
-FROM python:3.12
+FROM python:3.12 as builder
 
-# Set directory
-WORKDIR /app/ranking_server
+ENV PIP_REQUESTS_TIMEOUT=60 \
+    POETRY_REQUESTS_TIMEOUT=60 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=1 \ 
+    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# Install Poetry
-RUN --mount=type=cache,target=/root/.cache \
-    pip install poetry
+WORKDIR /app
 
-# Install dependencies using Poetry
-RUN --mount=type=bind,source=.,target=/app/ranking_server \
-    --mount=type=cache,target=/root/.cache \
-    poetry config virtualenvs.create false \
-    && poetry install --only=main \
-    && poetry build --format=wheel --output=/tmp \
-    && pip install /tmp/osome*.whl \
-    # && poetry cache clear --all --no-interaction PyPI \
-    # && poetry cache clear --all --no-interaction _default_cache \
-    # && pip cache purge \
-    && rm -f /tmp/osome*.whl
+COPY pyproject.toml poetry.lock .
+
+RUN    pip install poetry \
+    && poetry install --only=main --no-root --no-directory \
+    && rm -rf ${POETRY_CACHE_DIR}
+
+COPY dante/ ./dante
+
+RUN poetry install --only=main
+
+FROM python:3.12-slim as runtime
+
+ENV VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:${PATH}"
+
+WORKDIR /app
+
+COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+
+COPY dante ./dante
 
 # Expose the port the app runs on
 EXPOSE 5001
 
-# Copy rankingserver / scorer apps
-COPY app/ /app
-
 # Define the command to run the application
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "ranking_server:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "dante.app.ranking_server.ranking_server:app"]
