@@ -98,18 +98,6 @@ def getconfig(fn="config.ini", force_reload=False):
     if "DANTE_CONFIG_PATH" in os.environ:
         conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
     found_files = _config.read(conf_search_path)
-    logger = get_logger(__name__)
-    if len(found_files) == 0:
-        # Package has not been configured yet, copy sample ini to user conf dir
-        # and retry
-        sample_fn = fn + '.sample'
-        sample_conf_path = str(files("dante.osomerank").joinpath(sample_fn))
-        logger.warning(f"No config found! Copying {sample_conf_path} to "
-                       "{user_config_path}")
-        shutil.copy(sample_conf_path, os.path.join(user_config_path, fn))
-        found_files = _config.read(conf_search_path)
-    logger.info(f"Found configuration: {found_files}")
-    return _config
 
 
 def fetchfroms3(prefix, base_dir):
