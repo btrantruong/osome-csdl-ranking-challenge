@@ -1,16 +1,19 @@
 """Basic scoring example
 
-This example demonstrates how to use Celery to run multiple scoring tasks in parallel.
+This example demonstrates how to use Celery to run multiple scoring tasks in
+parallel.
 
-It is a straightforward application of the Celery's group task primitive, and can be
-adequate for simple use cases. The following limitations apply:
-- only one result task type can be run by `compute_scores`
-- the deadline for the task group is handled by Celery, and therefore has a granularity
-  of seconds (i.e. if the deadline is set to 1.5 seconds, it will be rounded up to 2 seconds)
-- we return results in an all-or-nothing fashion, i.e. if one task fails, the whole group
-  is considered failed, similarly with timeouts
-- inputs and outputs are simple Python dicts; you might want to prefer types that
-  provide better validation and documentation, such as Pydantic models
+It is a straightforward application of the Celery's group task primitive, and
+can be adequate for simple use cases. The following limitations apply:
+    - only one result task type can be run by `compute_scores`
+    - the deadline for the task group is handled by Celery, and therefore has a
+    granularity of seconds (i.e. if the deadline is set to 1.5 seconds, it will
+    be rounded up to 2 seconds)
+    - we return results in an all-or-nothing fashion, i.e. if one task fails,
+    the whole group is considered failed, similarly with timeouts
+    - inputs and outputs are simple Python dicts; you might want to prefer
+    types that provide better validation and documentation, such as Pydantic
+    models
 
 Consult the `scorer_advanced.py` example for a more sophisticated approach.
 """
@@ -23,11 +26,12 @@ from celery import group
 from celery.exceptions import TimeoutError
 from celery.utils import uuid
 
-from scorer_worker.celery_app import app as celery_app
+from .celery_app import app as celery_app
 
+# similar to Celery's log format
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",  # similar to Celery's log format
+    format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -38,11 +42,13 @@ logger = logging.getLogger(__name__)
 DEADLINE_SECONDS = 10
 
 
-def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def compute_scores(task_name: str,
+                   input: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Task dispatcher/manager.
 
     Args:
-        runner (Callable): The function that implements the task logic (from `tasks.py`).
+        runner (Callable): The function that implements the task logic (from
+                          `tasks.py`).
         input (list[dict[str, Any]]): List of input dictionaries for the tasks.
 
     Returns:
@@ -52,7 +58,9 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
     tasks = []
     for item in input:
         tasks.append(
-            celery_app.signature(task_name, kwargs=item, options={"task_id": uuid()})
+            celery_app.signature(task_name,
+                                 kwargs=item,
+                                 options={"task_id": uuid()})
         )
 
     logger.info("Sending the task group")
@@ -60,12 +68,14 @@ def compute_scores(task_name: str, input: list[dict[str, Any]]) -> list[dict[str
     finished_tasks = []
     start = time.time()
     try:
-        # if the tasks are very quick, you can try reducing the interval parameter
-        # to get higher polling frequency
-        finished_tasks = async_result.get(timeout=DEADLINE_SECONDS, interval=0.1)
+        # if the tasks are very quick, you can try reducing the interval
+        # parameter to get higher polling frequency
+        finished_tasks = async_result.get(timeout=DEADLINE_SECONDS,
+                                          interval=0.1)
     except TimeoutError:
         logger.error(
-            f"Timed out waiting for results after {time.time() - start} seconds"
+            f"Timed out waiting for results after {time.time() - start} "
+            "seconds"
         )
     except Exception as e:
         logger.error(f"Task runner threw an error: {e}")
@@ -80,11 +90,13 @@ def compute_batch_scores(
     """Task dispatcher/manager.
 
     Args:
-        runner (Callable): The function that implements the task logic (from `tasks.py`).
+        runner (Callable): The function that implements the task logic (from
+                          `tasks.py`).
         input (list[dict[str, Any]]): List of input dictionaries for the tasks.
 
     Returns:
-        dict[str, float]: Output dictionary for the tasks. Each dictionary have item IDs as keys and values are scores
+        dict[str, float]: Output dictionary for the tasks. Each dictionary have
+        item IDs as keys and values are scores
     """
 
     tasks = [
@@ -100,12 +112,14 @@ def compute_batch_scores(
     finished_tasks = []
     start = time.time()
     try:
-        # if the tasks are very quick, you can try reducing the interval parameter
-        # to get higher polling frequency
-        (finished_tasks,) = async_result.get(timeout=DEADLINE_SECONDS, interval=0.1)
+        # if the tasks are very quick, you can try reducing the interval
+        # parameter to get higher polling frequency
+        (finished_tasks,) = async_result.get(timeout=DEADLINE_SECONDS,
+                                             interval=0.1)
     except TimeoutError:
         logger.error(
-            f"Timed out waiting for results after {time.time() - start} seconds"
+            f"Timed out waiting for results after {time.time() - start} "
+            "seconds"
         )
     except Exception as e:
         logger.error(f"Task runner threw an error: {e}")

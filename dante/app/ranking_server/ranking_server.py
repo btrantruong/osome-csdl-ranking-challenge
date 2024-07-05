@@ -2,7 +2,7 @@ from bisect import bisect
 # from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
-import sys
+# import sys
 
 from fastapi import FastAPI
 from ranking_challenge.request import RankingRequest, ContentItem
@@ -10,10 +10,8 @@ from ranking_challenge.response import RankingResponse
 import redis
 import uvicorn
 
-from utils import multisort, clean_text
-
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-from scorer_worker.scorer_basic import compute_batch_scores
+from .utils import multisort, clean_text
+from ..scorer_worker.scorer_basic import compute_batch_scores
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,7 +25,8 @@ REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
 
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
-    description="Ranks input based on how unpopular the things and people in it are.",
+    description="Ranks input based on how unpopular the things "
+    "and people in it are.",
     version="0.1.0",
 )
 
@@ -56,15 +55,23 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     """
     Combine scores into a single list of dictionaries.
     Items are ordered as follows:
-    1. non_har_posts: an ordered list of Non-HaR (low-harm) posts. These posts are further ranked by audience diversity, break tie by AR score (sentiment)
-    2. har_posts: an ordered list of HaR (harmful). These posts are further ranked by AR score (sentiment)
+
+    1. non_har_posts: an ordered list of Non-HaR (low-harm) posts. These posts
+       are further ranked by audience diversity, break tie by AR score
+       (sentiment)
+
+    2. har_posts: an ordered list of HaR (harmful). These posts are further
+       ranked by AR score (sentiment)
+
     Args:
-        har_scores, ar_scores, ad_scores, td_scores (dict[str, float]): dictionary where k,v are item IDs, scores
+
+        har_scores, ar_scores, ad_scores, td_scores (dict[str, float]):
+            dictionary where k,v are item IDs, scores
 
     Returns:
         (list of dict): a reordered list of dictionaries
     """
-    ## Helper: normalization for HaR scores
+    # Helper: normalization for HaR scores
     BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
 
     ranked_results = []
@@ -74,7 +81,8 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_score)
-        ad_score = ad_scores[item_id] if ad_scores[item_id] != -1000 else td_scores[item_id]
+        ad_score = ad_scores[item_id] if ad_scores[item_id] \
+            != -1000 else td_scores[item_id]
 
         processed_item = {
             "id": item_id,
@@ -84,15 +92,21 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
             "har_normalized": har_normalized,  # {0,1,2,3,4}
         }
 
-        if har_normalized == (2 | 3 | 4):  # posts that have interval 2, 3, 4: hars
+        # posts that have interval 2, 3, 4: hars
+        if har_normalized == (2 | 3 | 4):
             har_posts.append(processed_item)
         else:  # posts that have interval 0 or 1: non-hars
             non_har_posts.append(processed_item)
 
-    # rank non-HaR posts by audience diversity, break tie by AR score (sentiment)
+    # rank non-HaR posts by audience diversity, break tie by AR score
+    # (sentiment)
     multisort(
         non_har_posts,
-        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
+        [
+            ("har_normalized", False),
+            ("audience_diversity", True),
+            ("ar_score", True)
+        ],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
 
@@ -142,22 +156,34 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         "scorer_worker.tasks.td_batch_scorer", post_data, platform
     )
 
-    ## Using ThreadPoolExecutor doesn't work?
+    # # Using ThreadPoolExecutor doesn't work?
     # tasks = {
     #     "har_scores": (
     #         "scorer_worker.tasks.har_batch_scorer",
     #         post_data,
     #         platform,
     #     ),
-    #     "ar_scores": ("scorer_worker.tasks.ar_batch_scorer", post_data, platform),
-    #     "ad_scores": ("scorer_worker.tasks.ad_batch_scorer", post_data, platform),
-    #     "td_scores": ("scorer_worker.tasks.td_batch_scorer", post_data, platform),
+    #     "ar_scores": (
+    #         "scorer_worker.tasks.ar_batch_scorer",
+    #         post_data,
+    #         platform
+    #     ),
+    #     "ad_scores": (
+    #         "scorer_worker.tasks.ad_batch_scorer",
+    #         post_data,
+    #         platform
+    #     ),
+    #     "td_scores": (
+    #         "scorer_worker.tasks.td_batch_scorer",
+    #         post_data,
+    #         platform),
     # }
 
     # scores = {}
     # with ThreadPoolExecutor() as executor:
     #     future_to_task = {
-    #         executor.submit(execute_task, *args): name for name, args in tasks.items()
+    #         executor.submit(execute_task, *args): name
+    #             for name, args in tasks.items()
     #     }
     #     for future in as_completed(future_to_task):
     #         task_name = future_to_task[future]
@@ -171,7 +197,10 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     # ad_link_scores = scores["ad_scores"]
     # td_scores = scores["td_scores"]
 
-    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
+    ranked_results = combine_scores(har_scores,
+                                    ar_scores,
+                                    ad_link_scores,
+                                    td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
 
@@ -180,7 +209,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
 if __name__ == "__main__":
     uvicorn.run(
-        "ranking_server:app",
+        "dante.app.ranking_server.ranking_server:app",
         host="127.0.0.1",
         port=5001,
         log_level="debug",
