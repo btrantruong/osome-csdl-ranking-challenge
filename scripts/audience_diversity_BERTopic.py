@@ -6,10 +6,13 @@ Created on Sat Apr 13 15:27:50 2024
 @author: saumya
 """
 
+# XXX Move to scripts folder
+
 __all__ = ['main']
 
 # Standard lib imports
 import json
+import logging
 
 # External dependencies imports
 import numpy as np
@@ -17,12 +20,9 @@ import pandas as pd
 
 from bertopic import BERTopic
 
-# Package imports
-from .utils import get_logger
-
 
 def main():
-    logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
     logger.info("Started topic model update.")
     data = pd.read_csv("data/political_kaggle_tweets.csv")
     if 'Unnamed: 0' in data.columns:
