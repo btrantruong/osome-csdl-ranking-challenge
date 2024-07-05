@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# XXX move to scripts folder for non-package scripts
+
 """
 Created on Wed May 22 15:55:15 2024
 
@@ -30,18 +33,21 @@ However, I am reading the redis URL using the envionment variable REDIS_URL.
 # Standard library imports
 import io
 import json
+import logging
 import os
 
 # External dependencies imports
-from bertopic import BERTopic
+import boto3
 import numpy as np
 import pandas as pd
 import psycopg2
 import redis
 import requests
 
+from bertopic import BERTopic
+
 # Package imports
-from .utils import remove_urls, gets3, get_logger, getconfig
+from dante.osomerank.utils import remove_urls, fetchfroms3, getconfig
 
 __all__ = ['main']
 
@@ -55,13 +61,6 @@ db_user = config.get("POSTGRES", "user")
 db_password = config.get("POSTGRES", "password")
 
 REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
-
-
-# def redis_client():
-#     global memoized_redis_client
-#     if memoized_redis_client is None:
-#         memoized_redis_client = redis.Redis.from_url(REDIS_DB)
-#     return memoized_redis_client
 
 
 def process_text(text):
@@ -111,22 +110,40 @@ def fill_cache_with_url(urls_db, redis_client_obj):
             r = requests.head(uu, allow_redirects=True, timeout=10)
             redis_client_obj[uu] = r.url
         except Exception:
-            logger = get_logger(__name__)
+            logger = logging.getLogger(__name__)
             logger.exception("Exception while filling cache with URLs")
             continue
 
 
+def putons3(s3client, data, bucket, path):
+    """
+    Use s3client to put data into bucket at the given path
+    """
+    obj = s3client.Object(bucket, path)
+    obj.put(Body=data)
+
+
+def gets3(config):
+    region_name = config.get("S3", "S3_REGION_NAME")
+    access_key = config.get("S3", "S3_ACCESS_KEY")
+    access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    s3 = boto3.resource(service_name="s3",
+                        region_name=region_name,
+                        aws_access_key_id=access_key,
+                        aws_secret_access_key=access_key_secret)
+    return s3
+
+
 def main():
-    logger = get_logger(__name__)
+    logger = logging.getLogger(__name__)
     logger.info("Started training of BertTopic model.")
     config = getconfig()
-    s3 = gets3()
-    s3_resource = gets3(resource=True)
     redis_client_obj = redis.Redis.from_url(REDIS_DB)
-    s3_bucket = config.get("S3", "S3_BUCKET")
-    response = s3.get_object(Bucket=s3_bucket,
-                             Key="data/topic_modelling_training_data.csv")
-    data = pd.read_csv(io.BytesIO(response["Body"].read()))
+    # XXX
+    fn = "data/topic_modelling_training_data.csv"
+    fetchfroms3(os.path.dirname(fn), ".")
+    s3client = gets3(config)
+    data = pd.read_csv(fn)
     data_db, urls_db = get_text_from_db()
     if urls_db:
         fill_cache_with_url(urls_db, redis_client_obj)
@@ -147,9 +164,8 @@ def main():
     #                    ignore_index=True)
     csv_buffer = io.StringIO()
     data.to_csv(csv_buffer)
-    s3_resource.Object(s3_bucket,
-                       "data/topic_modelling_training_data.csv").put(
-                           Body=csv_buffer.getvalue())
+    s3_bucket = config.get("S3", "S3_BUCKET")
+    putons3(s3client, csv_buffer.getvalue(), s3_bucket, fn)
     data = data.dropna().reset_index(drop=True)
     data["Text_processed"] = [process_text(tt)
                               for tt in data["Text"].values.tolist()]
@@ -169,7 +185,7 @@ def main():
             "partisanship"
         ].values.tolist()
         topic_diversity[int(topic)] = np.var(partisanship_values)
-    s3object = s3_resource.Object(
+    s3object = s3client.Object(
         s3_bucket, "models/AD_rockwell/BERTopic_diversity.json"
     )
     s3object.put(Body=(bytes(json.dumps(topic_diversity).encode("UTF-8"))))
@@ -180,6 +196,14 @@ def main():
         save_ctfidf=True,
         save_embedding_model=embedding_model,
     )
+    s3 = boto3.client("s3")
+    region_name = config.get("S3", "S3_REGION_NAME")
+    access_key = config.get("S3", "S3_ACCESS_KEY")
+    access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+    s3 = boto3.client(service_name="s3",
+                      region_name=region_name,
+                      aws_access_key_id=access_key,
+                      aws_secret_access_key=access_key_secret)
     s3.upload_file(
         Filename="models/ctfidf.safetensors",
         Bucket=s3_bucket,
