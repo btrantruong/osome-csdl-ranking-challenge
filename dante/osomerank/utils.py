@@ -245,7 +245,11 @@ def _setup_logging(level=logging.INFO):
     # Get root logger and set level
     logger = logging.getLogger()
     logger.setLevel(level=level)
-    logdir = user_log_dir(appname="dante", ensure_exists=True)
+    if "DANTE_LOG_DIR" in os.environ:
+        logdir = os.environ["DANTE_LOG_DIR"]
+        os.makedirs(logdir, exist_ok=True)
+    else:
+        logdir = user_log_dir(appname="dante", ensure_exists=True)
     path = os.path.join(logdir, "dante.log")
     # Configure formatter
     fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
