@@ -19,7 +19,6 @@ import os
 from collections import defaultdict
 
 # External dependencies imports
-from platformdirs import user_cache_dir
 from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
@@ -96,7 +95,8 @@ def har_prediction(texts, platform):
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
         raise RuntimeError("Models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() first.")
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -130,7 +130,8 @@ def ar_prediction(texts, platform):
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
         raise RuntimeError("Elicited Response models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() first.")
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:
