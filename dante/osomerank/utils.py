@@ -17,7 +17,8 @@ from importlib.resources import files
 
 # External dependencies imports
 import boto3
-import platformdirs
+from platformdirs import site_config_dir, user_config_dir, user_cache_dir, \
+    user_log_dir
 
 # Root logger
 _root_logger = None
@@ -40,54 +41,61 @@ def getcachedir():
         os.makedirs(cache_dir, exist_ok=True)
         return cache_dir
     except KeyError:
-        return platformdirs.user_cache_dir("dante")
+        return user_cache_dir("dante")
 
 
-def getconfig(fn="config.ini"):
+# XXX switch to __package__ (once this is at the main package level)
+def getconfig(fn="config.ini", force_reload=False):
     """
-    Load provided configuration file. The search path includes, in this order:
+    Load provided configuration file. The search path includes, in this order
+    of priority:
+        - The file pointed at by environment variable DANTE_CONFIG_PATH
+          (highest priority)
         - The current working directory
         - The user config directory per XDG specs
         - The site config directory per XDG specs
-        - The module's location within the installed package
+        - The "sample" configuration files in the module's location within the
+        installed package (lowest priority, read by default)
 
     We use platformdirs to follow XDG specs for user/site config directories.
     Missing files are silently ignored. If the user config directories does not
-    exist, it is created for the purpose. If configuration file(s) have been
-    already loaded, return previously loaded files. Finally, if no
-    configuration file is found, we copy the sample bundled with the package to
-    the user config dir.
+    exist, it is created for the purpose and a copy of the sample file is
+    created.
+
+    Note that the configuration is read only once from disk. Subsequent calls
+    to this function return the previously loaded configuration unless the
+    `force_reload` parameter is set to True.
     """
     global _config
-    # Do not reload config if already loaded
-    if _config is not None:
+    # Do not reload config if already loaded unless forcing reload
+    if not force_reload and _config is not None:
         return _config
-    cwd_config_path = os.getcwd()
-    # XXX switch to __package__ (once this is at the main package level)
-    user_config_path = platformdirs.user_config_path("dante",
-                                                     ensure_exists=True)
-    site_config_path = platformdirs.site_config_path("dante")
-    py_config_path = os.path.dirname(__file__)
-    conf_search_path = [
-        cwd_config_path,
-        user_config_path,
-        site_config_path,
-        py_config_path,
-    ]
-    conf_search_path = [os.path.join(p, fn) for p in conf_search_path]
-    _config = configparser.ConfigParser()
-    found_files = _config.read(conf_search_path)
     logger = get_logger(__name__)
-    if len(found_files) == 0:
-        # Package has not been configured yet, copy sample ini to user conf dir
-        # and retry
-        sample_fn = fn + '.sample'
-        sample_conf_path = str(files("dante.osomerank").joinpath(sample_fn))
-        logger.warning(f"No config found! Copying {sample_conf_path} to "
-                       "{user_config_path}")
-        shutil.copy(sample_conf_path, os.path.join(user_config_path, fn))
-        found_files = _config.read(conf_search_path)
-    logger.info(f"Found configuration: {found_files}")
+    # Set up paths for sample and user config files
+    sample_conf_path = str(files(__name__).joinpath(fn + '.sample'))
+    user_conf_dir = user_config_dir("dante", ensure_exists=True)
+    user_conf_path = os.path.join(user_conf_dir, fn)
+    if not os.path.exists(os.path.join(user_conf_dir, fn)):
+        logger.warning(f"Could not find {user_conf_path}. "
+                       f"Creating blank config from {sample_conf_path}")
+        shutil.copy(sample_conf_path, user_conf_path)
+    # Create config parser object
+    _config = configparser.ConfigParser()
+    # Read default config from sample file bundled in the package
+    with open(sample_conf_path) as f:
+        logger.info("Reading configuration from: {sample_conf_path}")
+        _config.read_file(f)
+    # Read optional files
+    site_conf_path = os.path.join(site_config_dir("dante"), fn)
+    conf_search_path = [
+        site_conf_path,
+        user_conf_path,
+        os.path.join(os.getcwd(), fn),
+    ]
+    if "DANTE_CONFIG_PATH" in os.environ:
+        conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
+    found_files = _config.read(conf_search_path)
+    logger.info(f"Additional configurations from: {found_files}")
     return _config
 
 
@@ -111,7 +119,8 @@ def fetchfroms3(prefix, base_dir):
     access_key = config.get("S3", "S3_ACCESS_KEY")
     access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
     bucket_name = config.get("S3", "S3_BUCKET")
-    logger.info(f"Fetching from s3://{bucket_name}/{prefix} region {region_name}")
+    logger.info(f"Fetching from s3://{bucket_name}/{prefix} region "
+                f"{region_name}")
     s3 = boto3.resource(service_name="s3",
                         region_name=region_name,
                         aws_access_key_id=access_key,
@@ -236,8 +245,7 @@ def _setup_logging(level=logging.INFO):
     # Get root logger and set level
     logger = logging.getLogger()
     logger.setLevel(level=level)
-    logdir = platformdirs.user_log_dir(appname="dante",
-                                       ensure_exists=True)
+    logdir = user_log_dir(appname="dante", ensure_exists=True)
     path = os.path.join(logdir, "dante.log")
     # Configure formatter
     fmt = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"

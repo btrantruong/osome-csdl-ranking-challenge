@@ -20,9 +20,10 @@ These variables are specified in `docker-compose.yml` (To be updated). Copied he
 
 ### Environment Variables
 
-| Variable          | Description                                    |
-| -------------------------------------------------------------------|
-| `DANTE_CACHE_DIR` | Location for data / model cache                |
+| Variable            | Description                                    |
+| ------------------- | ---------------------------------------------- |
+| `DANTE_CACHE_DIR`   | Location for data / model cache                |
+| `DANTE_CONFIG_PATH` | Path to configuration file                     |
 
 ## How to run locally
 
