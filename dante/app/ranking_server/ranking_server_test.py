@@ -1,18 +1,18 @@
 import json
-from datetime import UTC, datetime
 from unittest.mock import patch
 
 import fakeredis
 import pytest
-import test_data
 from fastapi.testclient import TestClient
 
-import ranking_server
+from . import ranking_server
+from . import test_data
 
 
 @pytest.fixture
 def app(redis_client):
-    with patch("ranking_server.redis_client", return_value=redis_client):
+    with patch("dante.app.ranking_server.ranking_server.redis_client",
+               return_value=redis_client):
         app = ranking_server.app
         yield app
 
@@ -39,4 +39,4 @@ def test_rank(client, redis_client):
         assert False
 
     result = response.json()
-    print("Finished test ")
+    print(f"Finished test: {result}")
