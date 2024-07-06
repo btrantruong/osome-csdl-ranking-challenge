@@ -83,7 +83,7 @@ def getconfig(fn="config.ini", force_reload=False):
     _config = configparser.ConfigParser()
     # Read default config from sample file bundled in the package
     with open(sample_conf_path) as f:
-        logger.info("Reading configuration from: {sample_conf_path}")
+        logger.info(f"Reading configuration from: {sample_conf_path}")
         _config.read_file(f)
     # Read optional files
     site_conf_path = os.path.join(site_config_dir("dante"), fn)
