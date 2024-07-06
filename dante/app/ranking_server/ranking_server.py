@@ -25,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting up")
 
-REDIS_DB = f"{os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379')}/0"
+REDIS_DB = os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379/0')
 
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
