@@ -1,5 +1,4 @@
 import json
-import logging
 from unittest.mock import patch
 
 import fakeredis
@@ -7,8 +6,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from dante.app.ranking_server import ranking_server, test_data
-
-logger = logging.getLogger(__name__)
 
 @pytest.fixture
 def app(redis_client):

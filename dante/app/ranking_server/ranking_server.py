@@ -7,20 +7,19 @@ from bisect import bisect
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # External dependencies
+import redis
+import uvicorn
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
-import redis
-import uvicorn
 
 # Package dependencies
 from ...utils import getconfig, multisort, clean_text, get_logger
 from ..scorer_worker.scorer_basic import compute_batch_scores
 
-logger = get_logger(__name__)
-logger.info("Starting up")
 
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
@@ -36,26 +35,6 @@ app.add_middleware(
     allow_credentials=False,
     allow_methods=["HEAD", "OPTIONS", "GET", "POST"],
     allow_headers=["*"],
-)
-
-from .utils import multisort, clean_text
-from ..scorer_worker.scorer_basic import compute_batch_scores
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S,%f",
-)
-logger = logging.getLogger(__name__)
-logger.info("Starting up")
-
-REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
-
-app = FastAPI(
-    title="Prosocial Ranking Challenge combined example",
-    description="Ranks input based on how unpopular the things "
-    "and people in it are.",
-    version="0.1.0",
 )
 
 memoized_redis_client = None
