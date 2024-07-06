@@ -6,11 +6,6 @@ authors = ["Giovanni Luca Ciampaglia <glciampagl@gmail.com>; Bao T. Truong <baot
 license = "MIT"
 readme = "README.md"
 packages = [{include = "dante"}]
-# include = [
-#     { path = "dante/osomerank/data/*.csv", format = ["sdist", "wheel"] }, 
-#     { path = "dante/osomerank/models/AD_rockwell/*.*", format = ["sdist", "wheel"] },
-#     { path = "dante/osomerank/models/ER/*/*.*", format = ["sdist", "wheel"] }
-# ]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -38,6 +33,7 @@ torch = "^2.3.1"
 unshorten-fast = {git = "https://github.com/glciampaglia/unshorten-fast.git"}
 uvicorn = "^0.30.1"
 platformdirs = "^4.2.2"
+fakeredis = "^2.23.3"
 
 
 [tool.poetry.group.dev]

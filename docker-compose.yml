@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   database:
     image: postgres:15.7-alpine
     ports:
@@ -19,6 +20,7 @@ services:
       timeout: 14s
       retries: 15
       start_period: 2m
+
   redis:
     image: redis
     ports:
@@ -33,38 +35,59 @@ services:
   ranker:
     build:
       context: .
-      dockerfile: docker/Dockerfile.ranker
+      dockerfile: docker/Dockerfile.ranker # XXX rename
     depends_on:
       - redis
     environment:
       REDIS_CONNECTION_STRING: redis://redis:6379
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
-    command: ["poetry", "run", "uvicorn", "--host", "0.0.0.0", "--port", "5001", "ranking_server:app"]
+    command: ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "dante.app.ranking_server.ranking_server:app"]
     ports:
       - "5001:5001"
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: ${HOME}/.cache/dante
+        target: /app/cache
 
   celery-scorer-worker0:
     build:
       context: .
-      dockerfile: docker/Dockerfile.scorer_worker
+      dockerfile: docker/Dockerfile.ranker # XXX rename
     depends_on:
       - redis-celery-broker
     environment:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
-    command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info"]
+    command: ["celery", "-A", "dante.app.scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info"]
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: ${HOME}/.cache/dante
+        target: /app/cache
 
   celery-scorer-worker1:
     build:
       context: .
-      dockerfile: docker/Dockerfile.scorer_worker
+      dockerfile: docker/Dockerfile.ranker # XXX rename
     depends_on:
       - redis-celery-broker
     environment:
       CELERY_BROKER: redis://redis-celery-broker:6380
       CELERY_BACKEND: redis://redis-celery-broker:6380
-    command: ["poetry", "run", "celery", "-A", "scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info"]
+    command: ["celery", "-A", "dante.app.scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info"]
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: ${HOME}/.cache/dante
+        target: /app/cache
 
 volumes:
   postgres_data:

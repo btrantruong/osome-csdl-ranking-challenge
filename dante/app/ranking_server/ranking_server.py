@@ -1,17 +1,21 @@
+# Standard library imports
 from bisect import bisect
 # from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
 # import sys
 
+# External dependencies
 from fastapi import FastAPI
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
 import redis
 import uvicorn
 
+# Package dependencies
 from .utils import multisort, clean_text
 from ..scorer_worker.scorer_basic import compute_batch_scores
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting up")
 
-REDIS_DB = f"{os.getenv('REDIS_URL', 'redis://localhost:6379')}/0"
+REDIS_DB = f"{os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379')}/0"
 
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
@@ -144,37 +148,37 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
 
     # get different scores
     har_scores = compute_batch_scores(
-        "scorer_worker.tasks.har_batch_scorer", post_data, platform
+        "dante.app.scorer_worker.tasks.har_batch_scorer", post_data, platform
     )
     ar_scores = compute_batch_scores(
-        "scorer_worker.tasks.ar_batch_scorer", post_data, platform
+        "dante.app.scorer_worker.tasks.ar_batch_scorer", post_data, platform
     )
     ad_link_scores = compute_batch_scores(
-        "scorer_worker.tasks.ad_batch_scorer", post_data, platform
+        "dante.app.scorer_worker.tasks.ad_batch_scorer", post_data, platform
     )
     td_scores = compute_batch_scores(
-        "scorer_worker.tasks.td_batch_scorer", post_data, platform
+        "dante.app.scorer_worker.tasks.td_batch_scorer", post_data, platform
     )
 
     # # Using ThreadPoolExecutor doesn't work?
     # tasks = {
     #     "har_scores": (
-    #         "scorer_worker.tasks.har_batch_scorer",
+    #         "dante.app.scorer_worker.tasks.har_batch_scorer",
     #         post_data,
     #         platform,
     #     ),
     #     "ar_scores": (
-    #         "scorer_worker.tasks.ar_batch_scorer",
+    #         "dante.app.scorer_worker.tasks.ar_batch_scorer",
     #         post_data,
     #         platform
     #     ),
     #     "ad_scores": (
-    #         "scorer_worker.tasks.ad_batch_scorer",
+    #         "dante.app.scorer_worker.tasks.ad_batch_scorer",
     #         post_data,
     #         platform
     #     ),
     #     "td_scores": (
-    #         "scorer_worker.tasks.td_batch_scorer",
+    #         "dante.app.scorer_worker.tasks.td_batch_scorer",
     #         post_data,
     #         platform),
     # }
