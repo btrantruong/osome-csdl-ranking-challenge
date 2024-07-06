@@ -35,7 +35,7 @@ services:
   ranker:
     build:
       context: .
-      dockerfile: docker/Dockerfile.ranker # XXX rename
+      dockerfile: Dockerfile
     depends_on:
       - redis
     environment:
@@ -56,7 +56,7 @@ services:
   celery-scorer-worker0:
     build:
       context: .
-      dockerfile: docker/Dockerfile.ranker # XXX rename
+      dockerfile: Dockerfile
     depends_on:
       - redis-celery-broker
     environment:
@@ -74,7 +74,7 @@ services:
   celery-scorer-worker1:
     build:
       context: .
-      dockerfile: docker/Dockerfile.ranker # XXX rename
+      dockerfile: Dockerfile
     depends_on:
       - redis-celery-broker
     environment:
