@@ -1,11 +1,6 @@
-import sys
-from pathlib import Path
-
 import pytest
 
-from scorer_worker.celery_app import app as celery_app
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
+from dante.app.scorer_worker.celery_app import app as celery_app
 
 pytest_plugins = ("celery.contrib.pytest",)
 
@@ -29,10 +24,12 @@ def celery_worker_parameters():
     as parameters when instantiating :class:`~celery.worker.WorkController`.
     """
     return {
-        # For some reason this `celery.ping` is not registed IF our own worker is still
-        # running. To avoid failing tests in that case, we disable the ping check.
-        # see: https://github.com/celery/celery/issues/3642#issuecomment-369057682
-        # here is the ping task: `from celery.contrib.testing.tasks import ping`
+        # For some reason this `celery.ping` is not registed IF our own worker
+        # is still running. To avoid failing tests in that case, we disable the
+        # ping check. see:
+        # https://github.com/celery/celery/issues/3642#issuecomment-369057682
+        # here is the ping task: `from celery.contrib.testing.tasks import
+        # ping`
         "perform_ping_check": False,
     }
 

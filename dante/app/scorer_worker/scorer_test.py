@@ -1,19 +1,35 @@
-# This is an integration test to illustrate the functionality of the scoring example.
+# This is an integration test to illustrate the functionality of the scoring
+# example.
 from itertools import cycle
 
 import pytest
 
-# from scorer_worker.scorer_advanced import ScorerType, ScoringInput, compute_scores
-from scorer_worker.scorer_basic import compute_scores as compute_scores_basic
-from scorer_worker.scorer_basic import compute_batch_scores
-from scorer_worker.tasks import TIME_LIMIT_SECONDS, RandomScoreInput
+# from dante.app.scorer_worker.scorer_advanced import ScorerType,\
+#       ScoringInput, compute_scores
+# from dante.app.scorer_basic import compute_scores as compute_scores_basic
+from dante.app.scorer_worker.scorer_basic import compute_batch_scores
+from dante.app.scorer_worker.tasks import TIME_LIMIT_SECONDS, RandomScoreInput
 
 sample_posts = [
     "That's horrible",
-    "BREAKING NEWS- Active shooter at Bronx Lebanon Hospital in NYC. At least 3 people have been shot and the shooter is still on the loose.The suspect is male wearing a lab coat and possibly armed with a M-16 rifle. There is smoke on the 16th floor and the bomb squad is also on the scene.",
-    "Arrest them all they deserve it. Getting scared now. We hate their treasonous actions at our expense",
-    "You Russian conmen always act like YOU are losing your minds..She has more integrity in her little finger than your entire, beloved, family trump. LOL... losers..lol...  keep whining, it is so becoming of 'conservatives'..no substance, nothing to support, just whine, lie and distort.. we enjoy your dismay about American life.  haha. 🇺🇸",
-    "And the idiots were worried about Hillary's emails.  45 is using an unsecured phone but I guess that's okay.",
+    #
+    "BREAKING NEWS- Active shooter at Bronx Lebanon Hospital in NYC. At least "
+    "3 people have been shot and the shooter is still on the loose.The "
+    "suspect is male wearing a lab coat and possibly armed with a M-16 rifle. "
+    "There is smoke on the 16th floor and the bomb squad is also on the "
+    "scene.",
+    #
+    "Arrest them all they deserve it. Getting scared now. We hate their "
+    "treasonous actions at our expense",
+    #
+    "You Russian conmen always act like YOU are losing your minds..She has "
+    "more integrity in her little finger than your entire, beloved, family "
+    "trump. LOL... losers..lol...  keep whining, it is so becoming of "
+    "'conservatives'..no substance, nothing to support, just whine, lie and "
+    "distort.. we enjoy your dismay about American life.  haha. 🇺🇸",
+    #
+    "And the idiots were worried about Hillary's emails.  45 is using an "
+    "unsecured phone but I guess that's okay.",
 ]
 
 
@@ -58,7 +74,8 @@ def sample_data_with_exception():
 # def test_scoring_jobs_with_timeout(
 #     my_celery_app, celery_worker, sample_data_with_timeout
 # ):
-#     data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_timeout]
+#     data = [ScoringInput(ScorerType.RANDOM, x) for x in
+#     sample_data_with_timeout]
 #     scores = compute_scores(data)
 #     assert len(scores) == len(data)
 #     assert not all(x.error is None for x in scores)
@@ -67,7 +84,8 @@ def sample_data_with_exception():
 # def test_scoring_jobs_with_exception(
 #     my_celery_app, celery_worker, sample_data_with_exception
 # ):
-#     data = [ScoringInput(ScorerType.RANDOM, x) for x in sample_data_with_exception]
+#     data = [ScoringInput(ScorerType.RANDOM, x) for x in
+#     sample_data_with_exception]
 #     scores = compute_scores(data)
 #     assert len(scores) == len(data)
 #     assert not all(x.error is None for x in scores)
@@ -83,7 +101,8 @@ def sample_data_with_exception():
 #     assert len(scores) == len(data)
 
 
-# def test_scoring_jobs_advance_sentiment(my_celery_app, celery_worker, sample_data):
+# def test_scoring_jobs_advance_sentiment(my_celery_app, celery_worker,
+# sample_data):
 #     # print(my_celery_app.control.inspect().registered())
 #     # ^ uncomment to figure out the names of the registered tasks
 #     # when running pytest from the parent directory of this test,
@@ -113,11 +132,13 @@ def test_ar_batch_basic(my_celery_app, celery_worker, sample_data):
     assert len(scores) == len(data)
 
 
-# def test_scoring_jobs_batch_sentiment(my_celery_app, celery_worker, sample_data):
+# def test_scoring_jobs_batch_sentiment(my_celery_app, celery_worker,
+# sample_data):
 #     # print(my_celery_app.control.inspect().registered())
 #     # ^ uncomment to figure out the names of the registered tasks
 #     # when running pytest from the parent directory of this test,
 #     # the task name is the following
 #     data = [ScoringInput(ScorerType.SENTIMENT_BATCH, x) for x in sample_data]
-#     scores = compute_batch_scores("scorer_worker.tasks.sentiment_batch_scorer", data)
+#     scores = \
+#     compute_batch_scores("scorer_worker.tasks.sentiment_batch_scorer", data)
 #     assert len(scores) == len(data)
