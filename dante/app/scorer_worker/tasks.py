@@ -32,14 +32,18 @@ Models:
     SentimentScoreOutput
 """
 
+# Standard library imports
 import logging
-# import random
 import time
-from typing import Any, List, Dict, Callable
-from pydantic import BaseModel, Field
 
+from typing import Any, List, Dict, Callable, Optional
+
+# External dependencies imports
+from pydantic import BaseModel, Field
 from celery.signals import worker_init
 from .celery_app import app
+
+# Package imports
 from dante.osomerank import ar_prediction, har_prediction, ad_prediction,\
     td_prediction, load_all
 

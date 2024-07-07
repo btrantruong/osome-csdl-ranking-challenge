@@ -1,21 +1,5 @@
-"""Basic scoring example
-
-This example demonstrates how to use Celery to run multiple scoring tasks in
-parallel.
-
-It is a straightforward application of the Celery's group task primitive, and
-can be adequate for simple use cases. The following limitations apply:
-    - only one result task type can be run by `compute_scores`
-    - the deadline for the task group is handled by Celery, and therefore has a
-    granularity of seconds (i.e. if the deadline is set to 1.5 seconds, it will
-    be rounded up to 2 seconds)
-    - we return results in an all-or-nothing fashion, i.e. if one task fails,
-    the whole group is considered failed, similarly with timeouts
-    - inputs and outputs are simple Python dicts; you might want to prefer
-    types that provide better validation and documentation, such as Pydantic
-    models
-
-Consult the `scorer_advanced.py` example for a more sophisticated approach.
+"""
+Basic scoring example -- taken from ranking_challenge repo
 """
 
 import logging
@@ -54,7 +38,6 @@ def compute_scores(task_name: str,
     Returns:
         list[dict[str, Any]]: List of output dictionaries for the tasks.
     """
-
     tasks = []
     for item in input:
         tasks.append(
@@ -62,8 +45,7 @@ def compute_scores(task_name: str,
                                  kwargs=item,
                                  options={"task_id": uuid()})
         )
-
-    logger.info("Sending the task group")
+    logger.info(f"Sending task group: {task_name}")
     async_result = group(tasks).apply_async()
     finished_tasks = []
     start = time.time()
@@ -75,12 +57,11 @@ def compute_scores(task_name: str,
     except TimeoutError:
         logger.error(
             f"Timed out waiting for results after {time.time() - start} "
-            "seconds"
+            f"seconds: {task_name}"
         )
-    except Exception as e:
-        logger.error(f"Task runner threw an error: {e}")
-
-    logger.info(f"Finished tasks: {len(finished_tasks)}")
+    except Exception:
+        logger.exception(f"Exception in task runner: {task_name}")
+    logger.info(f"Finished {len(finished_tasks)} tasks: {task_name}")
     return finished_tasks
 
 
@@ -98,7 +79,6 @@ def compute_batch_scores(
         dict[str, float]: Output dictionary for the tasks. Each dictionary have
         item IDs as keys and values are scores
     """
-
     tasks = [
         celery_app.signature(
             task_name,
@@ -106,8 +86,7 @@ def compute_batch_scores(
             options={"task_id": uuid()},
         )
     ]
-
-    logger.info("Sending the task group")
+    logger.info(f"Sending task group: {task_name}")
     async_result = group(tasks).apply_async()
     finished_tasks = []
     start = time.time()
@@ -119,10 +98,9 @@ def compute_batch_scores(
     except TimeoutError:
         logger.error(
             f"Timed out waiting for results after {time.time() - start} "
-            "seconds"
+            f"seconds: {task_name}"
         )
-    except Exception as e:
-        logger.error(f"Task runner threw an error: {e}")
-
-    logger.info(f"Finished tasks: {len(finished_tasks)}")
+    except Exception:
+        logger.exception(f"Exception in task runner: {task_name}")
+    logger.info(f"Finished {len(finished_tasks)} tasks: {task_name}")
     return finished_tasks

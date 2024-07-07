@@ -69,7 +69,6 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
        ranked by AR score (sentiment)
 
     Args:
-
         har_scores, ar_scores, ad_scores, td_scores (dict[str, float]):
             dictionary where k,v are item IDs, scores
 
@@ -78,17 +77,14 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     """
     # Helper: normalization for HaR scores
     BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
-
     ranked_results = []
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
-
     for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_score)
         ad_score = ad_scores[item_id] if ad_scores[item_id] \
             != -1000 else td_scores[item_id]
-
         processed_item = {
             "id": item_id,
             "audience_diversity": ad_score,
@@ -96,13 +92,12 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
             "ar_score": ar_score,
             "har_normalized": har_normalized,  # {0,1,2,3,4}
         }
-
-        # posts that have interval 2, 3, 4: hars
         if har_normalized == (2 | 3 | 4):
+            # posts that have interval 2, 3, 4: hars
             har_posts.append(processed_item)
-        else:  # posts that have interval 0 or 1: non-hars
+        else:
+            # posts that have interval 0 or 1: non-hars
             non_har_posts.append(processed_item)
-
     # rank non-HaR posts by audience diversity, break tie by AR score
     # (sentiment)
     multisort(
@@ -114,32 +109,27 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
         ],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
-
     # concat the two lists, prioritizing non-HaR posts
     # ranked_results = non_har_posts + har_posts
     ranked_results = non_har_posts + har_posts
-
     return ranked_results
 
 
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
-
     logger.info("Received ranking request")
     redis_client_obj = redis.Redis.from_url(REDIS_DB)
     if ranking_request.survey:
         redis_client_obj[ranking_request.session.user_id] = (
             ranking_request.survey.ideology
         )
-
     platform = ranking_request.session.platform
     post_items = ranking_request.items
     post_data = [
         {
             "id": item.id,
             "text": (
-                clean_text(item.text)
-                if platform != "reddit"
+                clean_text(item.text) if platform != "reddit"
                 else clean_text(get_reddit_text(item))
             ),
             "urls": jsonable_encoder(item.embedded_urls)
