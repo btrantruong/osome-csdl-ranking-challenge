@@ -20,7 +20,10 @@ from ranking_challenge.response import RankingResponse
 from ...utils import getconfig, multisort, clean_text, get_logger
 from ..scorer_worker.scorer_basic import compute_batch_scores
 
+logger = get_logger(__name__)
+logger.info("Starting up")
 
+# XXX read version from __version__ file?
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
     description="Ranks input based on how unpopular the things "

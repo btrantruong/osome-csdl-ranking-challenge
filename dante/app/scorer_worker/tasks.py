@@ -44,7 +44,6 @@ Other utility functions:
 """
 
 # Standard library imports
-import logging
 import time
 
 from typing import Any, List, Dict, Callable, Optional
@@ -54,10 +53,6 @@ from pydantic import BaseModel, Field
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.signals import worker_init
 from .celery_app import app
-
-# Package imports
-from dante.osomerank import ar_prediction, har_prediction, ad_prediction,\
-    td_prediction, load_all
 
 # Package imports
 from dante.osomerank import (
