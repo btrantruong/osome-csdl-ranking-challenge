@@ -16,6 +16,8 @@ DOCKER_COMPOSE := $(shell \
 run:
 	$(DOCKER_COMPOSE) up --build
 
+build:
+	$(DOCKER_COMPOSE) build
 
 clean:
 	rm -rf dist
