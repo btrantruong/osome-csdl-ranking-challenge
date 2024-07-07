@@ -1,39 +1,49 @@
-"""Scoring tasks for the scoring job queue.
+"""
+Batch scoring tasks for the scoring job queue.
 
-We illustrate two types of scoring tasks: random scoring and har scoring.
-Random scoring tasks additionally provide optional parameters to control task
-duration and raise exceptions for testing.
+## Attributes
 
-In this example, the output format of the different types of scoring tasks is
-identical; if the output format differs the client code must keep track of task
-types and deserialize the output accordingly.
+There are read from configuration file, see `dante.utils:getconfig`.
 
-We provide Pydantic models for inputs and outputs, as they are self-documenting
-and provide built-in validation. They can optionally be used by the client code
-to construct tasks. Keep in mind that Celery's default serialization protocol
-is JSON, so the implementer is free to choose any favorite data type that can
-be easily converted to and from JSON, such as dataclasses, Pydantic models,
-vanilla dicts, etc.
+    - KILL_DEADLINE_SECONDS (float): Timeout before a task is killed by Celery
 
-Timing information in the output is included for illustration/benchmarking.
+    - TIME_LIMIT_SECONDS (float): Timeout before Celery raises a timeout error.
+      Must be less than KILL_DEADLINE_SECONDS
 
+## Functions
 
-Attributes:
-    KILL_DEADLINE_SECONDS (float): Timeout before a task is killed by Celery
-    TIME_LIMIT_SECONDS (float): Timeout before Celery raises a timeout error.
-                                Must be less than KILL_DEADLINE_SECONDS
+These have actually all the signature of a method, where self is the celery
+app. The `*_batch_scorer` are runners for batch scoring, so they return a list
+of dictionaries instead of just a dictionary with id and score:
 
-Functions:
     har_scorer(**kwargs) -> dict[str, float]: runner for har scorer
+    har_batch_scorer(**kwargs) -> list[dict[str, float]]:
+    ar_batch_scorer(**kwargs) -> list[dict[str, float]]:
+    ad_batch_scorer(**kwargs) -> list[dict[str, float]]:
+    td_batch_scorer(**kwargs) -> list[dict[str, float]]:
 
+Other utility functions:
 
-Models:
+    do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput: helper
+        function for har_scorer.
+
+    init_osomerank(*args, **kwargs) -> None: Signal sent to Celery workers to
+        load all model artifacts on worker init.
+
+    do_batch_scoring(input: BatchScoreInput,
+                     prediction_function: Callable[[list[str], str],
+                                                   list[float]],
+                     onlytext: Optional[bool] = False) -> dict[str, float]:
+        utility function for the *_batch_scorer functions
+
+## Models
     SentimentScoreInput
     SentimentScoreOutput
+    BatchScoreInput
+    ScoreOutput
 """
 
 # Standard library imports
-import logging
 import time
 
 from typing import Any, List, Dict, Callable, Optional
@@ -55,17 +65,16 @@ from dante.osomerank import (
     HAR_AVG_SCORE,
     AD_AVG_SCORE,
 )
+from ...utils import getconfig, get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
+c = getconfig()
 
-KILL_DEADLINE_SECONDS = 15
-TIME_LIMIT_SECONDS = 10
+# hard time limit
+KILL_DEADLINE_SECONDS = c.get("SCORER", "KILL_DEADLINE_SECONDS")
+# soft time limit
+TIME_LIMIT_SECONDS = c.GET("SCORER", "TIME_LIMIT_SECONDS")
 
 
 class SentimentScoreInput(BaseModel):

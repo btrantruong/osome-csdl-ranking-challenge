@@ -1,8 +1,10 @@
 """
-Basic scoring example -- taken from ranking_challenge repo
+Basic scorer
+
+Adapted from examples/combined/scorer_worker/scorer_basic.py in the main
+ranking_challenge repo.
 """
 
-import logging
 import time
 from typing import Any
 
@@ -10,20 +12,12 @@ from celery import group
 from celery.exceptions import TimeoutError
 from celery.utils import uuid
 
+from ...utils import get_logger, getconfig
 from .celery_app import app as celery_app
 
-# similar to Celery's log format
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-)
-logger = logging.getLogger(__name__)
-
-
-# Unfortunately Celery timeout granularity is in seconds, and if this value is
-# fractional, it will be rounded up to the nearest second when used in
-# `get` with the `timeout` parameter.
-DEADLINE_SECONDS = 10
+logger = get_logger(__name__)
+c = getconfig()
+DEADLINE_SECONDS = c.get("SCORER", "DEADLINE_SECONDS")
 
 
 def compute_scores(task_name: str,
