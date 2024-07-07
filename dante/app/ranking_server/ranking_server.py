@@ -186,7 +186,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     scores = {}
     with ThreadPoolExecutor() as executor:
         future_to_task = {
-            executor.submit(execute_task, *args): name for name, args in tasks.items()
+            executor.submit(execute_task, *args): name
+            for name, args in tasks.items()
         }
         for future in as_completed(future_to_task):
             task_name = future_to_task[future]
@@ -198,7 +199,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ar_scores = scores["ar_scores"]
     ad_link_scores = scores["ad_scores"]
     td_scores = scores["td_scores"]
-    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores,
+                                    td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
     return RankingResponse(**result)
