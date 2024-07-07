@@ -7,6 +7,7 @@ import os
 
 # External dependencies
 from fastapi import FastAPI
+from fastapi.encoders import jsonable_encoder
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
 import redis
@@ -141,7 +142,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                 if platform != "reddit"
                 else clean_text(get_reddit_text(item))
             ),
-            "urls": item.embedded_urls if item.embedded_urls else [],
+            "urls": jsonable_encoder(item.embedded_urls)
+            if item.embedded_urls else [],
         }
         for item in post_items
     ]
