@@ -12,8 +12,10 @@ import os
 
 from celery import Celery
 
+# XXX use config file as fallback for these two
 BROKER = f"{os.getenv('CELERY_BROKER', 'redis://localhost:6380')}/0"
 BACKEND = f"{os.getenv('CELERY_BACKEND', 'redis://localhost:6380')}/0"
+
 app = Celery("scorer_worker", backend=BACKEND, broker=BROKER)
 app.autodiscover_tasks(["dante.app.scorer_worker.tasks"], force=True)
 app.conf.task_default_queue = "scorer"
