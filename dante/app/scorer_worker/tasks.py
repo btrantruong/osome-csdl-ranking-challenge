@@ -97,7 +97,7 @@ class SentimentScoreOutput(ScoreOutput):
 
 
 def do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
-    har_score = elicited_response.har_prediction([input.text], "twitter")
+    har_score = har_prediction([input.text], "twitter")
     return SentimentScoreOutput(
         id=input.id,
         score=har_score,
@@ -141,16 +141,36 @@ def har_scorer(self, **kwargs) -> dict[str, float]:
     return result.model_dump()
 
 
-def do_batch_scoring(
-    input: BatchScoreInput,
-    prediction_function: Callable[[list[str], str], list[float]]
-) -> dict[str, float]:
-    items_text = (item["text"] for item in input.batch)
-    scores = prediction_function(items_text, input.platform)
+def do_batch_scoring(input: BatchScoreInput,
+                     prediction_function: Callable[[list[str], str],
+                                                   list[float]],
+                     onlytext: Optional[bool] = False) -> dict[str, float]:
+    """
+    Call prediction_function with given input.batch, return a dict of results
+    keyed by the item id
+
+    Args:
+        input: a BatchScoreInput object. input.batch is a list of dictionaries,
+            each dictionary including the id, text, and urls of a post to
+            score.
+
+        preduction_function: a prediction function from dante.osomerank for
+            scoring. See dante.osomerank.*_prediction.
+
+        onlytext: an optional boolean (default False):
+            if True, pass only the text of the posts to the scoring function.
+
+    Returns:
+        dict[str, float]: A dictionary of post ID -> score value entries.
+    """
+    if onlytext:
+        records = (item["text"] for item in input.batch)
+    else:
+        records = input.batch
+    scores = prediction_function(records, input.platform)
     result = dict()
     for item, score in zip(input.batch, scores):
         result[item["id"]] = score
-
     return result
 
 
@@ -174,14 +194,13 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
     The results are stored in the Celery result backend.
     """
-
     start = time.time()
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
     input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_batch_scoring(input, elicited_response.har_prediction),
+        batch=do_batch_scoring(input, har_prediction, onlytext=True),
         t_start=start,
         t_end=time.time(),
     )
@@ -214,7 +233,7 @@ def ar_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     logger.info(f"Task {task_id} started by {worker_id}")
     input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_batch_scoring(input, elicited_response.ar_prediction),
+        batch=do_batch_scoring(input, ar_prediction, onlytext=True),
         t_start=start,
         t_end=time.time(),
     )
@@ -240,14 +259,13 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
     The results are stored in the Celery result backend.
     """
-
     start = time.time()
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
     input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_batch_scoring(input, audience_diversity.ad_prediction),
+        batch=do_batch_scoring(input, ad_prediction),
         t_start=start,
         t_end=time.time(),
     )
@@ -273,14 +291,13 @@ def td_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
     The results are stored in the Celery result backend.
     """
-
     start = time.time()
     task_id = self.request.id
     worker_id = self.request.hostname
     logger.info(f"Task {task_id} started by {worker_id}")
     input = BatchScoreInput(**kwargs)
     batch_result = BatchScoreOutput(
-        batch=do_batch_scoring(input, topic_diversity.td_prediction),
+        batch=do_batch_scoring(input, td_prediction),
         t_start=start,
         t_end=time.time(),
     )
