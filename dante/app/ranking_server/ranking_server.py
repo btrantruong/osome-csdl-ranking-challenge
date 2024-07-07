@@ -1,6 +1,6 @@
 # Standard library imports
 from bisect import bisect
-# from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
 # import sys
@@ -147,69 +147,60 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         }
         for item in post_items
     ]
-
-    # get different scores
-    har_scores = compute_batch_scores(
-        "dante.app.scorer_worker.tasks.har_batch_scorer", post_data, platform
-    )
-    ar_scores = compute_batch_scores(
-        "dante.app.scorer_worker.tasks.ar_batch_scorer", post_data, platform
-    )
-    ad_link_scores = compute_batch_scores(
-        "dante.app.scorer_worker.tasks.ad_batch_scorer", post_data, platform
-    )
-    td_scores = compute_batch_scores(
-        "dante.app.scorer_worker.tasks.td_batch_scorer", post_data, platform
-    )
-
-    # # Using ThreadPoolExecutor doesn't work?
-    # tasks = {
-    #     "har_scores": (
-    #         "dante.app.scorer_worker.tasks.har_batch_scorer",
-    #         post_data,
-    #         platform,
-    #     ),
-    #     "ar_scores": (
-    #         "dante.app.scorer_worker.tasks.ar_batch_scorer",
-    #         post_data,
-    #         platform
-    #     ),
-    #     "ad_scores": (
-    #         "dante.app.scorer_worker.tasks.ad_batch_scorer",
-    #         post_data,
-    #         platform
-    #     ),
-    #     "td_scores": (
-    #         "dante.app.scorer_worker.tasks.td_batch_scorer",
-    #         post_data,
-    #         platform),
-    # }
-
-    # scores = {}
-    # with ThreadPoolExecutor() as executor:
-    #     future_to_task = {
-    #         executor.submit(execute_task, *args): name
-    #             for name, args in tasks.items()
-    #     }
-    #     for future in as_completed(future_to_task):
-    #         task_name = future_to_task[future]
-    #         try:
-    #             scores[task_name] = future.result()
-    #         except Exception as exc:
-    #             logger.error(f"{task_name} generated an exception: {exc}")
-
-    # har_scores = scores["har_scores"]
-    # ar_scores = scores["ar_scores"]
-    # ad_link_scores = scores["ad_scores"]
-    # td_scores = scores["td_scores"]
-
-    ranked_results = combine_scores(har_scores,
-                                    ar_scores,
-                                    ad_link_scores,
+    # # get different scores
+    # har_scores = compute_batch_scores(
+    #     "dante.app.scorer_worker.tasks.har_batch_scorer", post_data, platform
+    # )
+    # ar_scores = compute_batch_scores(
+    #     "dante.app.scorer_worker.tasks.ar_batch_scorer", post_data, platform
+    # )
+    # ad_link_scores = compute_batch_scores(
+    #     "dante.app.scorer_worker.tasks.ad_batch_scorer", post_data, platform
+    # )
+    # td_scores = compute_batch_scores(
+    #     "dante.app.scorer_worker.tasks.td_batch_scorer", post_data, platform
+    # )
+    tasks = {
+        "har_scores": (
+            "dante.app.scorer_worker.tasks.har_batch_scorer",
+            post_data,
+            platform,
+        ),
+        "ar_scores": (
+            "dante.app.scorer_worker.tasks.ar_batch_scorer",
+            post_data,
+            platform
+        ),
+        "ad_scores": (
+            "dante.app.scorer_worker.tasks.ad_batch_scorer",
+            post_data,
+            platform
+        ),
+        "td_scores": (
+            "dante.app.scorer_worker.tasks.td_batch_scorer",
+            post_data,
+            platform),
+    }
+    scores = {}
+    with ThreadPoolExecutor() as executor:
+        future_to_task = {
+            executor.submit(execute_task, *args): name
+            for name, args in tasks.items()
+        }
+        for future in as_completed(future_to_task):
+            task_name = future_to_task[future]
+            try:
+                scores[task_name] = future.result()
+            except Exception as exc:
+                logger.error(f"{task_name} generated an exception: {exc}")
+    har_scores = scores["har_scores"]
+    ar_scores = scores["ar_scores"]
+    ad_link_scores = scores["ad_scores"]
+    td_scores = scores["td_scores"]
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores,
                                     td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
-
     return RankingResponse(**result)
 
 
