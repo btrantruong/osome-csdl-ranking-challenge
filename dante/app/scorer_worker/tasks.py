@@ -26,6 +26,7 @@ Attributes:
 Functions:
     har_scorer(**kwargs) -> dict[str, float]: runner for har scorer
 
+
 Models:
     SentimentScoreInput
     SentimentScoreOutput
@@ -37,9 +38,10 @@ import time
 from typing import Any, List, Dict, Callable
 from pydantic import BaseModel, Field
 
+from celery.signals import worker_init
 from .celery_app import app
-from dante.osomerank import elicited_response, audience_diversity,\
-    topic_diversity
+from dante.osomerank import ar_prediction, har_prediction, ad_prediction,\
+    td_prediction, load_all
 
 logging.basicConfig(
     level=logging.INFO,
@@ -96,6 +98,14 @@ def do_har_scoring(input: SentimentScoreInput) -> SentimentScoreOutput:
         id=input.id,
         score=har_score,
     )
+
+
+@worker_init.connect
+def init_osomerank(*args, **kwargs) -> None:
+    """
+    Load all the model artifacts
+    """
+    load_all()
 
 
 @app.task(
