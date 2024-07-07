@@ -163,11 +163,10 @@ def har_scorer(self, **kwargs) -> dict[str, float]:
     return result.model_dump()
 
 
-def do_batch_scoring(
-    input: BatchScoreInput,
-    prediction_function: Callable[[list[str], str], list[float]],
-    onlytext: Optional[bool] = False,
-) -> dict[str, float]:
+def do_batch_scoring(input: BatchScoreInput,
+                     prediction_function: Callable[[list[str], str],
+                                                   list[float]],
+                     onlytext: Optional[bool] = False) -> dict[str, float]:
     """
     Call prediction_function with given input.batch, return a dict of results
     keyed by the item id
