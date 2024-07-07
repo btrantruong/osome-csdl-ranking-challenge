@@ -124,29 +124,27 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                            f"Call {__name__}.{load_ad_data.__name__}() first.")
     urls_available = []
     urls_index = []
-    audience_diversity_val = [default] * len(feed_posts)
-    try:
-        for idx, feed_post in enumerate(feed_posts):
-            for urll in feed_post["urls"]:
-                # Not a platform
-                if re.search(_PLATFORM_PAT, urll) is None:
-                    urls_index.append(idx)
-                    urls_available.append(urll)
-        if urls_available:
-            urls_available_unshortened = unshorten(*urls_available,
-                                                   cache_redis=True)
-        else:
-            urls_available_unshortened = []
-        for idx, url_available in enumerate(urls_available_unshortened):
-            domain = urlsplit(url_available).netloc
-            if ((m := re.search(_PAT, domain)) is not None) \
-                    and (re.search(_PLATFORM_PAT, urll) is None):
-                matched_domain = m.group()
-                audience_diversity_val[urls_index[idx]] = \
-                    _DF.loc[matched_domain]['visitor_var']
-        return audience_diversity_val
-    # XXX remove?
-    except Exception:
-        get_logger(__name__).exception("Error computing audience "
-                                       "diversity score")
-        return audience_diversity_val
+    audience_diversity_val = []
+    logger = get_logger(__name__)
+    for idx, feed_post in enumerate(feed_posts):
+        audience_diversity_val.append(default)
+        logger.debug(f"Post-{idx}: {feed_post}")
+        for urll in feed_post["urls"]:
+            # Not a platform
+            if re.search(_PLATFORM_PAT, urll) is None:
+                urls_index.append(idx)
+                urls_available.append(urll)
+    if urls_available:
+        # XXX need redis connection string here
+        urls_available_unshortened = unshorten(*urls_available,
+                                               cache_redis=False)
+    else:
+        urls_available_unshortened = []
+    for idx, url_available in enumerate(urls_available_unshortened):
+        domain = urlsplit(url_available).netloc
+        if ((m := re.search(_PAT, domain)) is not None) \
+                and (re.search(_PLATFORM_PAT, urll) is None):
+            matched_domain = m.group()
+            audience_diversity_val[urls_index[idx]] = \
+                _DF.loc[matched_domain]['visitor_var']
+    return audience_diversity_val
