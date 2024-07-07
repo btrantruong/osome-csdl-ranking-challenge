@@ -14,14 +14,10 @@ import os
 
 # External dependencies imports
 from bertopic import BERTopic
+import numpy as np
 
 # Package imports
 from .utils import getcachedir, getconfig, fetchfroms3, get_logger
-
-# XXX compute on the fly?
-TD_MEAN = 2.66
-TD_STD = 1.77
-mean_topic_diversity = 0
 
 TD_DATA = None
 TD_MODEL = None
@@ -40,12 +36,18 @@ def load_td_data():
     if not os.path.exists(cached_model_dir):
         logger.warning("No cached model found! Retrieving from S3.")
         fetchfroms3(prefix, cache_path)
+    # XXX: do not calculate probabilities?
     TD_MODEL = BERTopic.load(cached_model_dir)
     logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
     json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
     cached_json_path = os.path.join(cache_path, json_fn)
     with open(cached_json_path) as ff:
         TD_DATA = json.load(ff)
+    TD_MEAN = np.mean([TD_DATA[k] for k in TD_DATA])
+    TD_STD = np.std([TD_DATA[k] for k in TD_DATA])
+    for k in TD_DATA:
+        TD_DATA[k] = (TD_DATA[k] - TD_MEAN) / TD_STD
+
     logger.info(f"Loaded topics data from: {cached_json_path}")
 
 
@@ -61,52 +63,34 @@ def td_prediction(feed_posts, platform=None, default=-1000):
         platform (str, optional): the platform of the posts.
 
     Returns:
-        audience_diversity_val (list): the audience diversity scores of these
+        tmp (list): the audience diversity scores of these
         posts.
     """
     global TD_DATA, TD_MODEL
     if TD_DATA is None or TD_MODEL is None:
         raise RuntimeError("Topic diversity data/models have not been loaded! "
                            f"Call {__name__}.{load_td_data.__name__}() first.")
-    audience_diversity_val = [default] * len(feed_posts)
-    try:
-        sm_texts_processed = [feed_post["text"] for feed_post in feed_posts]
-        texts_processed = []
-        text_index_processed = []
-        for idx, text in enumerate(sm_texts_processed):
-            if text != "NA":
-                texts_processed.append(text)
-                text_index_processed.append(idx)
-        topics = TD_MODEL.transform(texts_processed)[0]
-        for idx, topic in enumerate(topics):
-            if int(topic) != -1:
-                td_val = TD_DATA[str(topic)]
-                audience_diversity_val[text_index_processed[idx]] = (
-                    td_val - TD_MEAN
-                ) / TD_STD
-    except Exception:
-        get_logger(__name__).exception("Error computing topic "
-                                       "diversity scores")
-        return [mean_topic_diversity] * len(feed_posts)
-    for idx, ad in enumerate(audience_diversity_val):
-        if ad == default:
-            audience_diversity_val[idx] = mean_topic_diversity
-    return audience_diversity_val
-
-
-# XXX remove?
-def ad_prediction_single(feed_post, platform, default=-1000):
-    global TD_MODEL, TD_DATA
-    audience_diversity_val = default
-    try:
-        sm_text = feed_post["text"]
-        if sm_text != "NA":
-            topic = TD_MODEL.transform([sm_text])[0][0]
-            if int(topic) != -1:
-                audience_diversity_val = TD_DATA[str(topic)]
-    except Exception:
-        get_logger(__name__).exception("Error computing topic diversity score")
-        return mean_topic_diversity
-    if audience_diversity_val == default:
-        audience_diversity_val = mean_topic_diversity
-    return audience_diversity_val
+    tmp = []
+    docs = []
+    docs_idx = []
+    logger = get_logger(__name__)
+    for i, post in enumerate(feed_posts):
+        logger.debug(f"Post-{i}: {post}")
+        if post["text"] != "NA":
+            docs.append(post["text"])
+            docs_idx.append(i)
+        else:
+            # No text, return standardize mean
+            tmp.append(0.0)  # the standardized mean
+    if docs:
+        # XXX create BERTopic model with calculate_probabilities=False? (Speeds
+        # up things)
+        topics, _ = TD_MODEL.transform(docs)
+        for di, top in zip(docs_idx, topics):
+            if int(top) != -1:
+                # standardized diversity for that topic
+                tmp[di] = TD_DATA[str(top)]
+            else:
+                # No topic, return standardized mean
+                tmp[di] = 0.0
+    return tmp
