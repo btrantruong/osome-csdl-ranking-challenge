@@ -74,7 +74,7 @@ c = getconfig()
 # hard time limit
 KILL_DEADLINE_SECONDS = c.get("SCORER", "KILL_DEADLINE_SECONDS")
 # soft time limit
-TIME_LIMIT_SECONDS = c.GET("SCORER", "TIME_LIMIT_SECONDS")
+TIME_LIMIT_SECONDS = c.get("SCORER", "TIME_LIMIT_SECONDS")
 
 
 class SentimentScoreInput(BaseModel):
