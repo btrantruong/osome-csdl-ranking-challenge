@@ -70,19 +70,16 @@ def getconfig(fn="config.ini", force_reload=False):
     # Do not reload config if already loaded unless forcing reload
     if not force_reload and _config is not None:
         return _config
-    cwd_config_path = os.getcwd()
-    # XXX switch to __package__ (once this is at the main package level)
-    user_config_path = platformdirs.user_config_path("dante",
-                                                     ensure_exists=True)
-    site_config_path = platformdirs.site_config_path("dante")
-    py_config_path = os.path.dirname(__file__)
-    conf_search_path = [
-        cwd_config_path,
-        user_config_path,
-        site_config_path,
-        py_config_path,
-    ]
-    conf_search_path = [os.path.join(p, fn) for p in conf_search_path]
+    logger = get_logger(__name__)
+    # Set up paths for sample and user config files
+    sample_conf_path = str(files(__package__).joinpath(fn + '.sample'))
+    user_conf_dir = user_config_dir("dante", ensure_exists=True)
+    user_conf_path = os.path.join(user_conf_dir, fn)
+    if not os.path.exists(os.path.join(user_conf_dir, fn)):
+        logger.warning(f"Could not find {user_conf_path}. "
+                       f"Creating blank config from {sample_conf_path}")
+        shutil.copy(sample_conf_path, user_conf_path)
+    # Create config parser object
     _config = configparser.ConfigParser()
     # Read default config from sample file bundled in the package
     with open(sample_conf_path) as f:
