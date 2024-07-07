@@ -17,7 +17,7 @@ from bertopic import BERTopic
 import numpy as np
 
 # Package imports
-from .utils import getcachedir, getconfig, fetchfroms3, get_logger
+from ..utils import getcachedir, getconfig, fetchfroms3, get_logger
 
 TD_DATA = None
 TD_MODEL = None

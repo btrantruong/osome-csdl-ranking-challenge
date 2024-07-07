@@ -29,7 +29,7 @@ import numpy as np
 from unshorten_fast import unshorten
 
 # Package imports
-from .utils import getcachedir, getconfig, get_logger, fetchfroms3
+from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 
 AD_AVG_SCORE = 0  # default value. This is an average audience diversity

@@ -1,10 +1,5 @@
-from .utils import get_logger
-
+from ..utils import get_logger
 logger = get_logger(__name__)  # noqa
-
-from .utils import *  # noqa: F401,F403
-
-logger.info(f"Imported {utils.__file__}")  # noqa
 
 from .audience_diversity import *  # noqa: F401
 

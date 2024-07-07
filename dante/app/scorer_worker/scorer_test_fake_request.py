@@ -9,7 +9,6 @@ from ranking_challenge.request import ContentItem
 from ranking_challenge.fake import fake_request
 from fastapi.encoders import jsonable_encoder
 import pandas as pd
-from osomerank.utils import save_to_json, clean_text
 
 ABS_PATH = "/Users/baott/ranking-challenge/verification/latency_test/"
 facebook = pd.read_json(f"{ABS_PATH}/facebook_feed.json")
@@ -20,6 +19,7 @@ TARGET_LATENCY = 0.5  # Target latency in seconds (500ms p95)
 NUM_REQUESTS = (
     600  # Number of requests for each platform to generate a statistically valid sample
 )
+from ..utils import clean_text
 PLATFORMS = ["Facebook", "Reddit", "Twitter"]
 SAMPLES = {"Facebook": facebook, "Reddit": reddit, "Twitter": twitter}
 

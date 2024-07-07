@@ -26,7 +26,7 @@ from transformers import (
 )
 
 # Package imports
-from .utils import getcachedir, getconfig, get_logger, fetchfroms3
+from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 config = getconfig()
 

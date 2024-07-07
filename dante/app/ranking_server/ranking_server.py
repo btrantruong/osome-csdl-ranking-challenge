@@ -17,7 +17,7 @@ import redis
 import uvicorn
 
 # Package dependencies
-from .utils import multisort, clean_text
+from ..utils import multisort, clean_text
 from ..scorer_worker.scorer_basic import compute_batch_scores
 
 
