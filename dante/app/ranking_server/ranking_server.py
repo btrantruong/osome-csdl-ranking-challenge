@@ -137,8 +137,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         {
             "id": item.id,
             "text": (
-                clean_text(item.text)
-                if platform != "reddit"
+                clean_text(item.text) if platform != "reddit"
                 else clean_text(get_reddit_text(item))
             ),
             "urls": jsonable_encoder(item.embedded_urls)
