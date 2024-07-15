@@ -13,7 +13,7 @@ Inputs:
     - ???
 """
 
-__all__ = ['ad_prediction', 'load_ad_data']
+__all__ = ["ad_prediction", "load_ad_data", "AD_AVG_SCORE"]
 
 # standard library imports
 import os
@@ -28,6 +28,9 @@ from unshorten_fast import unshorten
 
 # Package imports
 from .utils import getcachedir, getconfig, get_logger, fetchfroms3
+
+
+AD_AVG_SCORE = 3.5  # default value. This is an average audience diversity
 
 platform_urls = [
     "amazon.com",
@@ -79,13 +82,15 @@ def load_ad_data():
     global _DF, _PAT, _PLATFORM_PAT
     logger = get_logger(__name__)
     if _DF is not None:
-        logger.warn("Audience diversity data have been already loaded! "
-                    "Reloading from scratch.")
+        logger.warn(
+            "Audience diversity data have been already loaded! "
+            "Reloading from scratch."
+        )
     config = getconfig()
     cache_path = getcachedir()
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
     path = os.path.join(cache_path, fn)
-    COLS = ['n_visitors', 'private_domain', 'visitor_var']
+    COLS = ["n_visitors", "private_domain", "visitor_var"]
     if not os.path.exists(path):
         logger.warning("No cached data found! Retrieving from S3.")
         prefix = os.path.dirname(fn)
@@ -95,9 +100,9 @@ def load_ad_data():
     # TODO: Need to remove domains whih are platform corref from NewsGuard data
     _DF = _DF.query("n_visitors >= 10")
     _DF.set_index("private_domain", inplace=True)
-    _ad_mean = _DF['visitor_var'].mean()
-    _ad_std = _DF['visitor_var'].std()
-    _DF['visitor_var'] = (_DF['visitor_var'] - _ad_mean) / _ad_std
+    _ad_mean = _DF["visitor_var"].mean()
+    _ad_std = _DF["visitor_var"].std()
+    _DF["visitor_var"] = (_DF["visitor_var"] - _ad_mean) / _ad_std
     _PAT = _list_to_pattern(*_DF.index)
 
 
@@ -120,8 +125,10 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     global _DF, _PAT, _PLATFORM_PAT
     if _DF is None or _PAT is None:
-        raise RuntimeError("Audience diversity data have not been loaded! "
-                           f"Call {__name__}.{load_ad_data.__name__}() first.")
+        raise RuntimeError(
+            "Audience diversity data have not been loaded! "
+            f"Call {__name__}.{load_ad_data.__name__}() first."
+        )
     urls_available = []
     urls_index = []
     audience_diversity_val = []
@@ -136,15 +143,16 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                 urls_available.append(urll)
     if urls_available:
         # XXX need redis connection string here
-        urls_available_unshortened = unshorten(*urls_available,
-                                               cache_redis=False)
+        urls_available_unshortened = unshorten(*urls_available, cache_redis=False)
     else:
         urls_available_unshortened = []
     for idx, url_available in enumerate(urls_available_unshortened):
         domain = urlsplit(url_available).netloc
-        if ((m := re.search(_PAT, domain)) is not None) \
-                and (re.search(_PLATFORM_PAT, urll) is None):
+        if ((m := re.search(_PAT, domain)) is not None) and (
+            re.search(_PLATFORM_PAT, urll) is None
+        ):
             matched_domain = m.group()
-            audience_diversity_val[urls_index[idx]] = \
-                _DF.loc[matched_domain]['visitor_var']
+            audience_diversity_val[urls_index[idx]] = _DF.loc[matched_domain][
+                "visitor_var"
+            ]
     return audience_diversity_val

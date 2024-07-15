@@ -1,16 +1,21 @@
 from .utils import get_logger
+
 logger = get_logger(__name__)  # noqa
 
-from .utils import * # noqa: F401,F403
+from .utils import *  # noqa: F401,F403
+
 logger.info(f"Imported {utils.__file__}")  # noqa
 
 from .audience_diversity import *  # noqa: F401
+
 logger.info(f"Imported {audience_diversity.__file__}")  # noqa
 
 from .topic_diversity import *  # noqa: F401
+
 logger.info(f"Imported {topic_diversity.__file__}")  # noqa
 
-from .elicited_response import * # noqa: F401
+from .elicited_response import *  # noqa: F401
+
 logger.info(f"Imported {elicited_response.__file__}")  # noqa
 
 

@@ -6,7 +6,13 @@ Created on Tue June 4 2024
 @author: Ozgur (modified by Bao, Giovanni)
 """
 
-__all__ = ['har_prediction', 'ar_prediction', 'load_er_models']
+__all__ = [
+    "har_prediction",
+    "ar_prediction",
+    "load_er_models",
+    "AR_AVG_SCORE",
+    "HAR_AVG_SCORE",
+]
 
 # Standard library imports
 import os
@@ -49,8 +55,7 @@ def load_er_models():
     # load MODEL_PIPELINES
     for model_name in model_names:
         for platform in platforms:
-            mod_prefix = config.get("ELICITED_RESPONSE",
-                                    f"{model_name}_{platform}")
+            mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
             model_path = os.path.join(cache_path, mod_prefix)
             tokenizer = AutoTokenizer.from_pretrained(
                 pretrained_model_name_or_path=model_path
@@ -88,9 +93,11 @@ def har_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError("Models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() "
-                           "first.")
+        raise RuntimeError(
+            "Models have not been loaded! "
+            f"Call {__name__}.{load_er_models.__name__}() "
+            "first."
+        )
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -123,9 +130,11 @@ def ar_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError("Elicited Response models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() "
-                           "first.")
+        raise RuntimeError(
+            "Elicited Response models have not been loaded! "
+            f"Call {__name__}.{load_er_models.__name__}() "
+            "first."
+        )
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:
