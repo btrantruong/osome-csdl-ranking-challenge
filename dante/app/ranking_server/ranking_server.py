@@ -1,12 +1,15 @@
+## Run with: uvicorn --host 0.0.0.0 --port 8000 dante.app.ranking_server.ranking_server:app --reload
 # Standard library imports
 from bisect import bisect
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import os
+
 # import sys
 
 # External dependencies
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
@@ -26,13 +29,22 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.info("Starting up")
 
-REDIS_DB = os.getenv('REDIS_CONNECTION_STRING', 'redis://localhost:6379/0')
+REDIS_DB = os.getenv("REDIS_CONNECTION_STRING", "redis://localhost:6379/0")
 
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
     description="Ranks input based on how unpopular the things "
     "and people in it are.",
     version="0.1.0",
+)
+
+# Set up CORS. This is necessary if calling this code directly from a browser extension
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["HEAD", "OPTIONS", "GET", "POST"],
+    allow_headers=["*"],
 )
 
 memoized_redis_client = None
@@ -83,8 +95,9 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
         har_normalized = bisect(BOUNDARIES, har_score)
-        ad_score = ad_scores[item_id] if ad_scores[item_id] \
-            != -1000 else td_scores[item_id]
+        ad_score = (
+            ad_scores[item_id] if ad_scores[item_id] != -1000 else td_scores[item_id]
+        )
         processed_item = {
             "id": item_id,
             "audience_diversity": ad_score,
@@ -102,11 +115,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     # (sentiment)
     multisort(
         non_har_posts,
-        [
-            ("har_normalized", False),
-            ("audience_diversity", True),
-            ("ar_score", True)
-        ],
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
     # concat the two lists, prioritizing non-HaR posts
@@ -129,11 +138,11 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         {
             "id": item.id,
             "text": (
-                clean_text(item.text) if platform != "reddit"
+                clean_text(item.text)
+                if platform != "reddit"
                 else clean_text(get_reddit_text(item))
             ),
-            "urls": jsonable_encoder(item.embedded_urls)
-            if item.embedded_urls else [],
+            "urls": jsonable_encoder(item.embedded_urls) if item.embedded_urls else [],
         }
         for item in post_items
     ]
@@ -159,23 +168,23 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         "ar_scores": (
             "dante.app.scorer_worker.tasks.ar_batch_scorer",
             post_data,
-            platform
+            platform,
         ),
         "ad_scores": (
             "dante.app.scorer_worker.tasks.ad_batch_scorer",
             post_data,
-            platform
+            platform,
         ),
         "td_scores": (
             "dante.app.scorer_worker.tasks.td_batch_scorer",
             post_data,
-            platform),
+            platform,
+        ),
     }
     scores = {}
     with ThreadPoolExecutor() as executor:
         future_to_task = {
-            executor.submit(execute_task, *args): name
-            for name, args in tasks.items()
+            executor.submit(execute_task, *args): name for name, args in tasks.items()
         }
         for future in as_completed(future_to_task):
             task_name = future_to_task[future]
@@ -187,18 +196,17 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ar_scores = scores["ar_scores"]
     ad_link_scores = scores["ad_scores"]
     td_scores = scores["td_scores"]
-    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores,
-                                    td_scores)
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
     return RankingResponse(**result)
 
 
-if __name__ == "__main__":
-    uvicorn.run(
-        "dante.app.ranking_server.ranking_server:app",
-        host="127.0.0.1",
-        port=5001,
-        log_level="debug",
-        reload=True,
-    )
+# if __name__ == "__main__":
+#     uvicorn.run(
+#         "dante.app.ranking_server.ranking_server:app",
+#         host="127.0.0.1",
+#         port=5001,
+#         log_level="debug",
+#         reload=True,
+#     )
