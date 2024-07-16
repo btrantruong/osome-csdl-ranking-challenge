@@ -184,6 +184,7 @@ first_submission/data/*
 scripts/
 app/ranker*.py
 app/scorer_worker/data
+debug/
 
 # Sensitive data
 dante/osomerank/data
