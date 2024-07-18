@@ -32,42 +32,21 @@ All commands are executed from the root directory of the repository.
 
 ### Setup
 
-#### Once
-
 1. Make sure you have docker and docker-compose installed.
 2. Make sure you have celery, redis-py, and pytest installed.
-
-#### Every time
-
-3. Start the docker daemon.
-
-### Build and run ALL components
-
-To (i) build the Docker images for all components and (ii) start them running in containers with a single command, use the following steps.
-
-1. Run `make run`
-
-### Build and run a SINGLE component
-
-1. Build image: e.g., `docker build -f docker/Dockerfile.ranker -t ranker .`
-2. Run: e.g., `docker run ranker`
-
-
-### Add models artifacts to dante
-
-Download all the contents of this [Google Drive
+3. Add models artifacts: Download all the contents of this [Google Drive
 folder](https://drive.google.com/drive/folders/1PCv57AxHhdwhkLGQbhT4o_6qke_NL2dC?usp=sharing)
-into, keeping the folder names, locally. Then you can can run a component and
-use a bind mount to give it access to the models artifacts needed to run dante.
-For example:
-
+into your user cache dir (see on the platformdirs doc for where to find it on [mac os](https://platformdirs.readthedocs.io/en/latest/api.html#platformdirs.macos.MacOS.user_cache_dir), [windows](https://platformdirs.readthedocs.io/en/latest/api.html#platformdirs.windows.Windows.site_cache_dir), and [linux](https://platformdirs.readthedocs.io/en/latest/api.html#platformdirs.unix.Unix.user_cache_dir)). There is no `$version`, while the `$appname` is `dante`. So for example on my Linux laptop the user cache dir is located at `/home/<username>/.cache/dante/`.
+4. Add a `config.ini` to the root of the repository. This is meant to supply the configuration without needing to rebuild the image, which will be helpful when deploying in production. But for now you can copy this file from our example config: `cp dante/osomerank/config.ini.sample config.ini`
+5. Start the docker daemon.
+6. Run the component(s) in 2 ways:
+*  6.1. Build and run all components with a single command: `make run`
+* 6.2. Build and run a single component (use a bind mount to give it access to the models artifacts needed to run dante)
 ```shell
-export DANTE_CACHE_DIR=/path/to/files
+export DANTE_CACHE_DIR=/path/to/files # The path where you store the Google Drive contents
 docker build -f docker/Dockerfile.ranker -t ranker .
 docker run --mount type=bind,src=${DANTE_CACHE_DIR},dst=/app/cache ranker
 ```
-
-Where `/path/to/files` should be replaced with the path where you downloaded the Google Drive contents.
 
 ### Clearing Space
 

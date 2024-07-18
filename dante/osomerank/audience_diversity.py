@@ -32,7 +32,7 @@ from unshorten_fast import unshorten
 from .utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 
-AD_AVG_SCORE = 3.5  # default value. This is an average audience diversity
+AD_AVG_SCORE = 0  # default value. This is an average audience diversity
 
 platform_urls = [
     "amazon.com",
