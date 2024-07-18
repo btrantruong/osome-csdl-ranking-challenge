@@ -47,7 +47,30 @@ def load_td_data():
     TD_STD = np.std([TD_DATA[k] for k in TD_DATA])
     for k in TD_DATA:
         TD_DATA[k] = (TD_DATA[k] - TD_MEAN) / TD_STD
-
+    TD_99_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 99)
+    TD_90_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 90)
+    TD_75_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 75)
+    TD_50_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 50)
+    TD_25_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 25)
+    TD_10_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 10)
+    TD_1_quantile = np.percentile([TD_DATA[k] for k in TD_DATA], 1)
+    for k in TD_DATA:
+        if TD_DATA[k] >= TD_99_quantile:
+            TD_DATA[k] = 7
+        if TD_DATA[k] >= TD_90_quantile:
+            TD_DATA[k] = 6
+        if TD_DATA[k] >= TD_75_quantile:
+            TD_DATA[k] = 5
+        if TD_DATA[k] >= TD_50_quantile:
+            TD_DATA[k] = 4
+        if TD_DATA[k] >= TD_25_quantile:
+            TD_DATA[k] = 3
+        if TD_DATA[k] >= TD_10_quantile:
+            TD_DATA[k] = 2
+        if TD_DATA[k] >= TD_1_quantile:
+            TD_DATA[k] = 1
+        else:
+            TD_DATA[k] = 0
     logger.info(f"Loaded topics data from: {cached_json_path}")
 
 
@@ -92,5 +115,5 @@ def td_prediction(feed_posts, platform=None, default=-1000):
                 tmp[di] = TD_DATA[str(top)]
             else:
                 # No topic, return standardized mean
-                tmp[di] = 0.0
+                tmp[di] = 3
     return tmp
