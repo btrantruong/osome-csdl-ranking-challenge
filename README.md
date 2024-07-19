@@ -40,7 +40,7 @@ into your user cache dir (see on the platformdirs doc for where to find it on [m
 4. Add a `config.ini` to the root of the repository. This is meant to supply the configuration without needing to rebuild the image, which will be helpful when deploying in production. But for now you can copy this file from our example config: `cp dante/osomerank/config.ini.sample config.ini`
 5. Start the docker daemon.
 6. Run the component(s) in 2 ways:
-*  6.1. Build and run all components with a single command: `make run`
+* 6.1. Build and run all components with a single command: `make run`
 * 6.2. Build and run a single component (use a bind mount to give it access to the models artifacts needed to run dante)
 ```shell
 export DANTE_CACHE_DIR=/path/to/files # The path where you store the Google Drive contents

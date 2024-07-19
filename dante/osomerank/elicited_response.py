@@ -26,7 +26,7 @@ from transformers import (
 )
 
 # Package imports
-from .utils import getcachedir, getconfig, get_logger, fetchfroms3
+from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 config = getconfig()
 
@@ -55,7 +55,8 @@ def load_er_models():
     # load MODEL_PIPELINES
     for model_name in model_names:
         for platform in platforms:
-            mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
+            mod_prefix = config.get("ELICITED_RESPONSE",
+                                    f"{model_name}_{platform}")
             model_path = os.path.join(cache_path, mod_prefix)
             tokenizer = AutoTokenizer.from_pretrained(
                 pretrained_model_name_or_path=model_path
@@ -86,18 +87,16 @@ def har_prediction(texts, platform):
         texts (list of str): texts from social media posts.
 
         platform (str): the type of social media: {'twitter', 'reddit',
-            'facebook'}
+        'facebook'}
 
     Returns:
         HaR score (float): The predicted HaR score for a feed_post
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError(
-            "Models have not been loaded! "
-            f"Call {__name__}.{load_er_models.__name__}() "
-            "first."
-        )
+        raise RuntimeError("Models have not been loaded! "
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -123,18 +122,16 @@ def ar_prediction(texts, platform):
         texts (list of str): texts from social media posts.
 
         platform (str): the type of social media: {'twitter', 'reddit',
-            'facebook'}
+        'facebook'}
 
     Returns:
         AR score (float): The predicted AR score for a feed_post
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError(
-            "Elicited Response models have not been loaded! "
-            f"Call {__name__}.{load_er_models.__name__}() "
-            "first."
-        )
+        raise RuntimeError("Elicited Response models have not been loaded! "
+                           f"Call {__name__}.{load_er_models.__name__}() "
+                           "first.")
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:

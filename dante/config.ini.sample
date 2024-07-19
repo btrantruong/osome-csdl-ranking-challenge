@@ -20,6 +20,28 @@ td_4 = models/AD_rockwell/ctfidf.safetensors
 td_5 = models/AD_rockwell/BERTopic_diversity.json
 td_6 = models/AD_rockwell/topics.json
 
+[RANKER]
+# Default redis connection string. Note the environment variable
+# REDIS_CONNECTION_STRING takes precedence over this value
+redis_db = 'redis://localhost:6379/0'
+
+# HaR normalization boundaries, see dante.app.ranking_server.ranking_server:combine_scores
+boundaries = [0.557, 0.572, 0.581, 0.6]
+
+[SCORER]
+# Hard time limit for celery tasks, see dante.app.scorer_worker.tasks
+KILL_DEADLINE_SECONDS = 5  
+
+# Soft time limit for celery tasks, see dante.app.scorer_worker.tasks
+TIME_LIMIT_SECONDS = 4  
+
+# Client timeout, see dante.app.scorer_worker.scorer_basic
+#
+# Unfortunately Celery timeout granularity is in seconds, and if this value is
+# fractional, it will be rounded up to the nearest second when used in `get`
+# with the `timeout` parameter.
+DEADLINE_SECONDS = 10
+
 ; [S3]
 ; S3_REGION_NAME = 
 ; S3_ACCESS_KEY = 
@@ -32,3 +54,5 @@ td_6 = models/AD_rockwell/topics.json
 ; database =
 ; user =
 ; password =
+
+; :vim:ft=conf:

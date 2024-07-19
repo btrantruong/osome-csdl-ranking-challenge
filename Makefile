@@ -1,4 +1,4 @@
-.PHONY: test run
+.PHONY: test run clean
 
 # use the new docker compose command if available or the legacy docker-compose command
 DOCKER_COMPOSE := $(shell \
@@ -15,3 +15,9 @@ DOCKER_COMPOSE := $(shell \
 
 run:
 	$(DOCKER_COMPOSE) up --build
+
+build:
+	$(DOCKER_COMPOSE) build
+
+clean:
+	rm -rf dist

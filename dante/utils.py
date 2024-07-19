@@ -72,7 +72,7 @@ def getconfig(fn="config.ini", force_reload=False):
         return _config
     logger = get_logger(__name__)
     # Set up paths for sample and user config files
-    sample_conf_path = str(files(__name__).joinpath(fn + '.sample'))
+    sample_conf_path = str(files(__package__).joinpath(fn + '.sample'))
     user_conf_dir = user_config_dir("dante", ensure_exists=True)
     user_conf_path = os.path.join(user_conf_dir, fn)
     if not os.path.exists(os.path.join(user_conf_dir, fn)):
@@ -95,8 +95,6 @@ def getconfig(fn="config.ini", force_reload=False):
     if "DANTE_CONFIG_PATH" in os.environ:
         conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
     found_files = _config.read(conf_search_path)
-    logger.info(f"Additional configurations from: {found_files}")
-    return _config
 
 
 def fetchfroms3(prefix, base_dir):
@@ -113,6 +111,8 @@ def fetchfroms3(prefix, base_dir):
 
     S3 settings are obtained from configuration file
     """
+    # XXX need lock on the cache location to prevent workers attempting to
+    # fetch at the same time in the same location.
     logger = get_logger(__name__)
     config = getconfig()
     region_name = config.get("S3", "S3_REGION_NAME")
@@ -168,6 +168,22 @@ def clean_text(text):
     if len(text.strip().split(" ")) <= 3:
         return "NA"
     return text
+
+
+def multisort(xs, specs):
+    """
+    Efficient sort with multiple keys & orders. See:
+
+    https://docs.python.org/3/howto/sorting.html#sort-stability-and-complex-sorts
+
+    Args:
+        xs: list sequence to sort
+
+        specs: list of (key, reverse) tuples. reverse=True: descending order
+    """
+    for key, reverse in reversed(specs):
+        xs.sort(key=lambda x: x[key], reverse=reverse)
+    return xs
 
 
 # Adapted from https://stackoverflow.com/a/53619707

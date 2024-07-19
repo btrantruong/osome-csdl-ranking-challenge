@@ -3,7 +3,7 @@
 """
 Created on Sun Jun 16 03:45:55 2024
 
-@author: saumya (modified by Bao)
+@author: saumya (modified by Bao and Giovanni)
 """
 
 __all__ = ["td_prediction", "load_td_data"]
@@ -17,7 +17,7 @@ from bertopic import BERTopic
 import numpy as np
 
 # Package imports
-from .utils import getcachedir, getconfig, fetchfroms3, get_logger
+from ..utils import getcachedir, getconfig, fetchfroms3, get_logger
 
 TD_DATA = None
 TD_MODEL = None
@@ -27,10 +27,8 @@ def load_td_data():
     global TD_DATA, TD_MODEL
     logger = get_logger(__name__)
     if TD_DATA is not None:
-        logger.warn(
-            "Topic diversity data and model have been already loaded! "
-            "Reloading from scratch."
-        )
+        logger.warn("Topic diversity data and model have been already loaded! "
+                    "Reloading from scratch.")
     config = getconfig()
     cache_path = getcachedir()
     prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
@@ -93,10 +91,8 @@ def td_prediction(feed_posts, platform=None, default=-1000):
     """
     global TD_DATA, TD_MODEL
     if TD_DATA is None or TD_MODEL is None:
-        raise RuntimeError(
-            "Topic diversity data/models have not been loaded! "
-            f"Call {__name__}.{load_td_data.__name__}() first."
-        )
+        raise RuntimeError("Topic diversity data/models have not been loaded! "
+                           f"Call {__name__}.{load_td_data.__name__}() first.")
     tmp = []
     docs = []
     docs_idx = []

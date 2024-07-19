@@ -1,36 +1,29 @@
 ## Run with: uvicorn --host 0.0.0.0 --port 8000 dante.app.ranking_server.ranking_server:app --reload
 # Standard library imports
-from bisect import bisect
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import logging
+import json
 import os
 
-# import sys
+from bisect import bisect
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # External dependencies
+import redis
+import uvicorn
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from ranking_challenge.request import RankingRequest, ContentItem
 from ranking_challenge.response import RankingResponse
-import redis
-import uvicorn
 
 # Package dependencies
-from .utils import multisort, clean_text
+from ...utils import getconfig, multisort, clean_text, get_logger
 from ..scorer_worker.scorer_basic import compute_batch_scores
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S,%f",
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 logger.info("Starting up")
 
-REDIS_DB = os.getenv("REDIS_CONNECTION_STRING", "redis://localhost:6379/0")
-
+# XXX read version from __version__ file?
 app = FastAPI(
     title="Prosocial Ranking Challenge combined example",
     description="Ranks input based on how unpopular the things "
@@ -52,6 +45,11 @@ memoized_redis_client = None
 
 def redis_client():
     global memoized_redis_client
+    c = getconfig()
+    # Get connection string from environment or use value from configuration
+    # file as a fallback
+    REDIS_DB = os.getenv('REDIS_CONNECTION_STRING',
+                         c.get("RANKER", "redis_db"))
     if memoized_redis_client is None:
         memoized_redis_client = redis.Redis.from_url(REDIS_DB)
     return memoized_redis_client
@@ -88,16 +86,16 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
         (list of dict): a reordered list of dictionaries
     """
     # Helper: normalization for HaR scores
-    BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+    c = getconfig()
+    boundaries = json.loads(c.get("RANKER", "boundaries"))
     ranked_results = []
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
     for item_id, har_score in har_scores:
         ar_score = ar_scores[item_id]
-        har_normalized = bisect(BOUNDARIES, har_score)
-        ad_score = (
-            ad_scores[item_id] if ad_scores[item_id] != -1000 else td_scores[item_id]
-        )
+        har_normalized = bisect(boundaries, har_score)
+        ad_score = ad_scores[item_id] if ad_scores[item_id] \
+            != -1000 else td_scores[item_id]
         processed_item = {
             "id": item_id,
             "audience_diversity": ad_score,
@@ -115,7 +113,11 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     # (sentiment)
     multisort(
         non_har_posts,
-        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
+        [
+            ("har_normalized", False),
+            ("audience_diversity", True),
+            ("ar_score", True)
+        ],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
     # concat the two lists, prioritizing non-HaR posts
@@ -127,7 +129,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
     logger.info("Received ranking request")
-    redis_client_obj = redis.Redis.from_url(REDIS_DB)
+    redis_client_obj = redis_client()
     if ranking_request.survey:
         redis_client_obj[ranking_request.session.user_id] = (
             ranking_request.survey.ideology
@@ -138,14 +140,16 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         {
             "id": item.id,
             "text": (
-                clean_text(item.text)
-                if platform != "reddit"
+                clean_text(item.text) if platform != "reddit"
                 else clean_text(get_reddit_text(item))
             ),
-            "urls": jsonable_encoder(item.embedded_urls) if item.embedded_urls else [],
+            "urls": jsonable_encoder(item.embedded_urls)
+            if item.embedded_urls else [],
         }
         for item in post_items
     ]
+    # # Using ThreadPoolExecutor instead, see below
+    #
     # # get different scores
     # har_scores = compute_batch_scores(
     #     "dante.app.scorer_worker.tasks.har_batch_scorer", post_data, platform
@@ -184,7 +188,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     scores = {}
     with ThreadPoolExecutor() as executor:
         future_to_task = {
-            executor.submit(execute_task, *args): name for name, args in tasks.items()
+            executor.submit(execute_task, *args): name
+            for name, args in tasks.items()
         }
         for future in as_completed(future_to_task):
             task_name = future_to_task[future]
@@ -196,7 +201,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
     ar_scores = scores["ar_scores"]
     ad_link_scores = scores["ad_scores"]
     td_scores = scores["td_scores"]
-    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores, td_scores)
+    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores,
+                                    td_scores)
     ranked_ids = [content.get("id", None) for content in ranked_results]
     result = {"ranked_ids": ranked_ids}
     return RankingResponse(**result)

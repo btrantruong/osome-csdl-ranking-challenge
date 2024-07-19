@@ -29,8 +29,7 @@ import numpy as np
 from unshorten_fast import unshorten
 
 # Package imports
-from .utils import getcachedir, getconfig, get_logger, fetchfroms3
-
+from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
 AD_AVG_SCORE = 0  # default value. This is an average audience diversity
 
@@ -84,10 +83,8 @@ def load_ad_data():
     global _DF, _PAT, _PLATFORM_PAT
     logger = get_logger(__name__)
     if _DF is not None:
-        logger.warn(
-            "Audience diversity data have been already loaded! "
-            "Reloading from scratch."
-        )
+        logger.warn("Audience diversity data have been already loaded! "
+                    "Reloading from scratch.")
     config = getconfig()
     cache_path = getcachedir()
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
@@ -153,10 +150,8 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     global _DF, _PAT, _PLATFORM_PAT
     if _DF is None or _PAT is None:
-        raise RuntimeError(
-            "Audience diversity data have not been loaded! "
-            f"Call {__name__}.{load_ad_data.__name__}() first."
-        )
+        raise RuntimeError("Audience diversity data have not been loaded! "
+                           f"Call {__name__}.{load_ad_data.__name__}() first.")
     urls_available = []
     urls_index = []
     audience_diversity_val = []
@@ -172,7 +167,8 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                 urls_available.append(urll)
     if urls_available:
         # XXX need redis connection string here
-        urls_available_unshortened = unshorten(*urls_available, cache_redis=False)
+        urls_available_unshortened = unshorten(*urls_available,
+                                               cache_redis=False)
     else:
         urls_available_unshortened = []
     log_url = []
@@ -180,7 +176,6 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
         domain = urlsplit(url_available).netloc
         domain_unshorten = urlsplit(url_available).netloc
         found_domain = False
-        found_domain_unshorten = False
         if ((m := re.search(_PAT, domain)) is not None) and (
             re.search(_PLATFORM_PAT, urll) is None
         ):
@@ -194,14 +189,18 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
         ):
             matched_domain_unshorten = m.group()
             found_domain_unshorten = True
+        else:
+            matched_domain_unshorten = None
+            found_domain_unshorten = False
         log_url.append({
-                'url':url_available,
-                'url_unshorten':urls_available_unshortened[idx],
-                'domain':domain,
-                'domain_unshorten':domain_unshorten,
-                'found_domain':found_domain,
-                'found_domain_unshorten':found_domain_unshorten
-            })
-    with open('url_analysis.json','w') as fin:
-        json.dump({'data':log_url},fin)
+            'url': url_available,
+            'url_unshorten': urls_available_unshortened[idx],
+            'domain': domain,
+            'domain_unshorten': domain_unshorten,
+            'found_domain': found_domain,
+            'found_domain_unshorten': found_domain_unshorten,
+            'matched_domain_unshorten': matched_domain_unshorten
+        })
+    with open('url_analysis.json', 'w') as fin:
+        json.dump({'data': log_url}, fin)
     return audience_diversity_val

@@ -1,3 +1,4 @@
+# XXX need to update this so we use the base image (see `../Dockerfile`)
 FROM python:3.12
 
 WORKDIR /app
