@@ -48,6 +48,12 @@ docker build -f docker/Dockerfile.ranker -t ranker .
 docker run --mount type=bind,src=${DANTE_CACHE_DIR},dst=/app/cache ranker
 ```
 
+### Run test on the ranker 
+
+Once you have the container running, test the ranker using this command:
+
+`pytest dante/app/ranking_server/ranking_server_test.py`
+
 ### Clearing Space
 
 Your personal machine might fill up when repeatedly building all these docker images and volumes. To clear space, run:
