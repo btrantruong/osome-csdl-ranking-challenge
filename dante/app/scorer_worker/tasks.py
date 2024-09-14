@@ -86,6 +86,7 @@ class BatchScoreInput(BaseModel):
     batch: List[Dict[str, Any]] = Field(
         description="A list of dictionaries, each with 'id', 'text', 'urls' "
         "and 'platform' keys for batch scoring"
+    )
     platform: str = Field(description="The platform of the items to score")
 
 
@@ -98,8 +99,7 @@ class ScoreOutput(BaseModel):
 
 class BatchScoreOutput(BaseModel):
     batch: Dict[str, float] = Field(
-        description="A dictionary where keys are item IDs and values "
-        "are scores"
+        description="A dictionary where keys are item IDs and values " "are scores"
     )
     t_start: float = Field(description="Start time (seconds)", default=0)
     t_end: float = Field(description="End time (seconds)", default=0)
@@ -130,8 +130,7 @@ def init_osomerank(*args, **kwargs) -> None:
 
 
 @app.task(
-    bind=True, time_limit=KILL_DEADLINE_SECONDS,
-    soft_time_limit=TIME_LIMIT_SECONDS
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
 def har_scorer(self, **kwargs) -> dict[str, float]:
     """Use pretrained model to perform HaR (Harmful Response) scoring
@@ -158,10 +157,11 @@ def har_scorer(self, **kwargs) -> dict[str, float]:
     return result.model_dump()
 
 
-def do_batch_scoring(input: BatchScoreInput,
-                     prediction_function: Callable[[list[str], str],
-                                                   list[float]],
-                     onlytext: Optional[bool] = False) -> dict[str, float]:
+def do_batch_scoring(
+    input: BatchScoreInput,
+    prediction_function: Callable[[list[str], str], list[float]],
+    onlytext: Optional[bool] = False,
+) -> dict[str, float]:
     """
     Call prediction_function with given input.batch, return a dict of results
     keyed by the item id
@@ -192,9 +192,7 @@ def do_batch_scoring(input: BatchScoreInput,
 
 
 @app.task(
-    bind=True,
-    time_limit=KILL_DEADLINE_SECONDS,
-    soft_time_limit=TIME_LIMIT_SECONDS
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
 def har_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """
@@ -229,9 +227,7 @@ def har_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
 
 @app.task(
-    bind=True,
-    time_limit=KILL_DEADLINE_SECONDS,
-    soft_time_limit=TIME_LIMIT_SECONDS
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
 def ar_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """
@@ -266,9 +262,7 @@ def ar_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
 
 @app.task(
-    bind=True,
-    time_limit=KILL_DEADLINE_SECONDS,
-    soft_time_limit=TIME_LIMIT_SECONDS
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
 def ad_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform Audience diversity scoring (batch mode)
@@ -302,9 +296,7 @@ def ad_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
 
 
 @app.task(
-    bind=True,
-    time_limit=KILL_DEADLINE_SECONDS,
-    soft_time_limit=TIME_LIMIT_SECONDS
+    bind=True, time_limit=KILL_DEADLINE_SECONDS, soft_time_limit=TIME_LIMIT_SECONDS
 )
 def td_batch_scorer(self, **kwargs) -> list[dict[str, float]]:
     """Use pretrained model to perform Topic diversity scoring (batch mode)

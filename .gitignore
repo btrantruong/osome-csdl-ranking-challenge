@@ -181,9 +181,18 @@ test/
 first_submission/data/*
 !first_submission/data/sample_data/
 !first_submission/data/test_data/
+*dev*
+.vscode/
+*data*/
+app/
+!dante/app/
+first_submission/rc-extension/
+report/
+debug/
 
 # VIM swap files
 .*.swp
 
 # Configuration files
 *.ini
+
