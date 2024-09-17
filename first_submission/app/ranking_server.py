@@ -20,7 +20,7 @@ config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 JSON_OUTDIR = config.get("DATA", "data_path")
 
 ## HELPERS
-BOUNDARIES = [0.557, 0.572, 0.581, 0.6]
+BOUNDARIES = [0.229, 0.290, 0.327, 0.405]
 
 
 def multisort(xs, specs):
