@@ -83,52 +83,60 @@ def load_ad_data():
     global _DF, _PAT, _PLATFORM_PAT
     logger = get_logger(__name__)
     if _DF is not None:
-        logger.warn("Audience diversity data have been already loaded! "
-                    "Reloading from scratch.")
+        logger.warn(
+            "Audience diversity data have been already loaded! "
+            "Reloading from scratch."
+        )
     config = getconfig()
     cache_path = getcachedir()
     fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
     path = os.path.join(cache_path, fn)
     COLS = ["n_visitors", "private_domain", "visitor_var"]
-    if not os.path.exists(path):
-        logger.warning("No cached data found! Retrieving from S3.")
-        prefix = os.path.dirname(fn)
-        fetchfroms3(prefix, cache_path)
-    _DF = pd.read_csv(path, usecols=COLS)
-    logger.info(f"Loaded: {path}")
-    # TODO: Need to remove domains whih are platform corref from NewsGuard data
-    _DF = _DF.query("n_visitors >= 10")
-    _DF.set_index("private_domain", inplace=True)
-    _ad_mean = _DF["visitor_var"].mean()
-    _ad_std = _DF["visitor_var"].std()
-    _DF["visitor_var"] = (_DF["visitor_var"] - _ad_mean) / _ad_std
-    _ad_99_quantile = np.percentile(_DF['visitor_var'].values, 99)
-    _ad_90_quantile = np.percentile(_DF['visitor_var'].values, 90)
-    _ad_75_quantile = np.percentile(_DF['visitor_var'].values, 75)
-    _ad_50_quantile = np.percentile(_DF['visitor_var'].values, 50)
-    _ad_25_quantile = np.percentile(_DF['visitor_var'].values, 25)
-    _ad_10_quantile = np.percentile(_DF['visitor_var'].values, 10)
-    _ad_1_quantile = np.percentile(_DF['visitor_var'].values, 1)
-    visitor_var_quantile = []
-    for varr in _DF["visitor_var"].values.tolist():
-        if varr >= _ad_99_quantile:
-            visitor_var_quantile.append(7)
-        elif varr >= _ad_90_quantile:
-            visitor_var_quantile.append(6)
-        elif varr >= _ad_75_quantile:
-            visitor_var_quantile.append(5)
-        elif varr >= _ad_50_quantile:
-            visitor_var_quantile.append(4)
-        elif varr >= _ad_25_quantile:
-            visitor_var_quantile.append(3)
-        elif varr >= _ad_10_quantile:
-            visitor_var_quantile.append(2)
-        elif varr >= _ad_1_quantile:
-            visitor_var_quantile.append(1)
-        else:
-            visitor_var_quantile.append(0)
-    _DF["visitor_var"] = visitor_var_quantile
-    _PAT = _list_to_pattern(*_DF.index)
+    try:
+        if not os.path.exists(path):
+            logger.warning("No cached data found! Retrieving from S3.")
+            prefix = os.path.dirname(fn)
+            fetchfroms3(prefix, cache_path)
+
+        _DF = pd.read_csv(path, usecols=COLS)
+        logger.info(f"Loaded: {path}")
+        # XXX: B: can we solve this?
+        # TODO: Need to remove domains which are platform corref from NewsGuard data
+        _DF = _DF.query("n_visitors >= 10")
+        _DF.set_index("private_domain", inplace=True)
+        _ad_mean = _DF["visitor_var"].mean()
+        _ad_std = _DF["visitor_var"].std()
+        _DF["visitor_var"] = (_DF["visitor_var"] - _ad_mean) / _ad_std
+        _ad_99_quantile = np.percentile(_DF["visitor_var"].values, 99)
+        _ad_90_quantile = np.percentile(_DF["visitor_var"].values, 90)
+        _ad_75_quantile = np.percentile(_DF["visitor_var"].values, 75)
+        _ad_50_quantile = np.percentile(_DF["visitor_var"].values, 50)
+        _ad_25_quantile = np.percentile(_DF["visitor_var"].values, 25)
+        _ad_10_quantile = np.percentile(_DF["visitor_var"].values, 10)
+        _ad_1_quantile = np.percentile(_DF["visitor_var"].values, 1)
+        visitor_var_quantile = []
+        for varr in _DF["visitor_var"].values.tolist():
+            if varr >= _ad_99_quantile:
+                visitor_var_quantile.append(7)
+            elif varr >= _ad_90_quantile:
+                visitor_var_quantile.append(6)
+            elif varr >= _ad_75_quantile:
+                visitor_var_quantile.append(5)
+            elif varr >= _ad_50_quantile:
+                visitor_var_quantile.append(4)
+            elif varr >= _ad_25_quantile:
+                visitor_var_quantile.append(3)
+            elif varr >= _ad_10_quantile:
+                visitor_var_quantile.append(2)
+            elif varr >= _ad_1_quantile:
+                visitor_var_quantile.append(1)
+            else:
+                visitor_var_quantile.append(0)
+        _DF["visitor_var"] = visitor_var_quantile
+        _PAT = _list_to_pattern(*_DF.index)
+    except Exception as e:
+        logger.error(f"Failed to load audience diversity data: {e}")
+        _DF = None  # Ensure _DF is set to None if loading fails
 
 
 def ad_prediction(feed_posts, platform=None, default=-1000):
@@ -150,8 +158,10 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     global _DF, _PAT, _PLATFORM_PAT
     if _DF is None or _PAT is None:
-        raise RuntimeError("Audience diversity data have not been loaded! "
-                           f"Call {__name__}.{load_ad_data.__name__}() first.")
+        raise RuntimeError(
+            "Audience diversity data have not been loaded! "
+            f"Call {__name__}.{load_ad_data.__name__}() first."
+        )
     urls_available = []
     urls_index = []
     audience_diversity_val = []
@@ -167,8 +177,7 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                 urls_available.append(urll)
     if urls_available:
         # XXX need redis connection string here
-        urls_available_unshortened = unshorten(*urls_available,
-                                               cache_redis=False)
+        urls_available_unshortened = unshorten(*urls_available, cache_redis=False)
     else:
         urls_available_unshortened = []
     log_url = []
@@ -192,15 +201,17 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
         else:
             matched_domain_unshorten = None
             found_domain_unshorten = False
-        log_url.append({
-            'url': url_available,
-            'url_unshorten': urls_available_unshortened[idx],
-            'domain': domain,
-            'domain_unshorten': domain_unshorten,
-            'found_domain': found_domain,
-            'found_domain_unshorten': found_domain_unshorten,
-            'matched_domain_unshorten': matched_domain_unshorten
-        })
-    with open('url_analysis.json', 'w') as fin:
-        json.dump({'data': log_url}, fin)
+        log_url.append(
+            {
+                "url": url_available,
+                "url_unshorten": urls_available_unshortened[idx],
+                "domain": domain,
+                "domain_unshorten": domain_unshorten,
+                "found_domain": found_domain,
+                "found_domain_unshorten": found_domain_unshorten,
+                "matched_domain_unshorten": matched_domain_unshorten,
+            }
+        )
+    with open("url_analysis.json", "w") as fin:
+        json.dump({"data": log_url}, fin)
     return audience_diversity_val

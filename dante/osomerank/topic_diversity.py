@@ -27,22 +27,36 @@ def load_td_data():
     global TD_DATA, TD_MODEL
     logger = get_logger(__name__)
     if TD_DATA is not None:
-        logger.warn("Topic diversity data and model have been already loaded! "
-                    "Reloading from scratch.")
-    config = getconfig()
-    cache_path = getcachedir()
-    prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
-    cached_model_dir = os.path.join(cache_path, prefix)
-    if not os.path.exists(cached_model_dir):
-        logger.warning("No cached model found! Retrieving from S3.")
-        fetchfroms3(prefix, cache_path)
-    # XXX: do not calculate probabilities?
-    TD_MODEL = BERTopic.load(cached_model_dir)
-    logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
-    json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
-    cached_json_path = os.path.join(cache_path, json_fn)
-    with open(cached_json_path) as ff:
-        TD_DATA = json.load(ff)
+        logger.warn(
+            "Topic diversity data and model have been already loaded! "
+            "Reloading from scratch."
+        )
+    # Attempt to load the BERTopic model
+    try:
+        config = getconfig()
+        cache_path = getcachedir()
+        prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
+        cached_model_dir = os.path.join(cache_path, prefix)
+        if not os.path.exists(cached_model_dir):
+            logger.warning("No cached model found! Retrieving from S3.")
+            fetchfroms3(prefix, cache_path)
+            # XXX: do not calculate probabilities?
+            TD_MODEL = BERTopic.load(cached_model_dir)
+            logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
+    except Exception as e:
+        logger.error(f"Failed to load BERTopic model from {cached_model_dir}: {e}")
+        return  # Exit the function if the model fails to load
+
+    try:
+        json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
+        cached_json_path = os.path.join(cache_path, json_fn)
+        with open(cached_json_path) as ff:
+            TD_DATA = json.load(ff)
+    except Exception as e:
+        logger.error(
+            f"Failed to load topic diversity data from {cached_json_path}: {e}"
+        )
+        return
     TD_MEAN = np.mean([TD_DATA[k] for k in TD_DATA])
     TD_STD = np.std([TD_DATA[k] for k in TD_DATA])
     for k in TD_DATA:
@@ -57,17 +71,18 @@ def load_td_data():
     for k in TD_DATA:
         if TD_DATA[k] >= TD_99_quantile:
             TD_DATA[k] = 7
-        if TD_DATA[k] >= TD_90_quantile:
+        # XXX: B: This should be elif, right?
+        elif TD_DATA[k] >= TD_90_quantile:
             TD_DATA[k] = 6
-        if TD_DATA[k] >= TD_75_quantile:
+        elif TD_DATA[k] >= TD_75_quantile:
             TD_DATA[k] = 5
-        if TD_DATA[k] >= TD_50_quantile:
+        elif TD_DATA[k] >= TD_50_quantile:
             TD_DATA[k] = 4
-        if TD_DATA[k] >= TD_25_quantile:
+        elif TD_DATA[k] >= TD_25_quantile:
             TD_DATA[k] = 3
-        if TD_DATA[k] >= TD_10_quantile:
+        elif TD_DATA[k] >= TD_10_quantile:
             TD_DATA[k] = 2
-        if TD_DATA[k] >= TD_1_quantile:
+        elif TD_DATA[k] >= TD_1_quantile:
             TD_DATA[k] = 1
         else:
             TD_DATA[k] = 0
@@ -91,8 +106,10 @@ def td_prediction(feed_posts, platform=None, default=-1000):
     """
     global TD_DATA, TD_MODEL
     if TD_DATA is None or TD_MODEL is None:
-        raise RuntimeError("Topic diversity data/models have not been loaded! "
-                           f"Call {__name__}.{load_td_data.__name__}() first.")
+        raise RuntimeError(
+            "Topic diversity data/models have not been loaded! "
+            f"Call {__name__}.{load_td_data.__name__}() first."
+        )
     tmp = []
     docs = []
     docs_idx = []

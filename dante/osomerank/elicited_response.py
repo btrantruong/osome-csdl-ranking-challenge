@@ -28,7 +28,6 @@ from transformers import (
 # Package imports
 from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
-config = getconfig()
 
 MODEL_PIPELINES = defaultdict()
 
@@ -47,6 +46,7 @@ def load_er_models():
     model_names = ["toxicity_trigger", "attracted_sentiment"]
     platforms = ["twitter", "reddit"]
     cache_path = getcachedir()
+    config = getconfig()
     prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
     er_model_dir = os.path.join(cache_path, prefix)
     if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
@@ -55,28 +55,30 @@ def load_er_models():
     # load MODEL_PIPELINES
     for model_name in model_names:
         for platform in platforms:
-            mod_prefix = config.get("ELICITED_RESPONSE",
-                                    f"{model_name}_{platform}")
-            model_path = os.path.join(cache_path, mod_prefix)
-            tokenizer = AutoTokenizer.from_pretrained(
-                pretrained_model_name_or_path=model_path
-            )
-            model = AutoModelForSequenceClassification.from_pretrained(
-                pretrained_model_name_or_path=model_path,
-                num_labels=1,
-                ignore_mismatched_sizes=True,
-            )
-            pipeline = TextClassificationPipeline(
-                model=model,
-                tokenizer=tokenizer,
-                max_length=512,
-                truncation=True,
-                batch_size=8,
-                # top_k=None,
-                # device="cuda",  # uncomment if GPU is available
-            )
-            MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
-            logger.info(f"Loaded {model_name}_{platform} model.")
+            try:
+                mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
+                model_path = os.path.join(cache_path, mod_prefix)
+                tokenizer = AutoTokenizer.from_pretrained(
+                    pretrained_model_name_or_path=model_path
+                )
+                model = AutoModelForSequenceClassification.from_pretrained(
+                    pretrained_model_name_or_path=model_path,
+                    num_labels=1,
+                    ignore_mismatched_sizes=True,
+                )
+                pipeline = TextClassificationPipeline(
+                    model=model,
+                    tokenizer=tokenizer,
+                    max_length=512,
+                    truncation=True,
+                    batch_size=8,
+                    # top_k=None,
+                    # device="cuda",  # uncomment if GPU is available
+                )
+                MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
+                logger.info(f"Loaded {model_name}_{platform} model.")
+            except Exception as e:
+                logger.error(f"Failed to load {model_name}_{platform} model: {e}")
 
 
 def har_prediction(texts, platform):
@@ -94,9 +96,11 @@ def har_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError("Models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() "
-                           "first.")
+        raise RuntimeError(
+            "Models have not been loaded! "
+            f"Call {__name__}.{load_er_models.__name__}() "
+            "first."
+        )
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -129,9 +133,11 @@ def ar_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError("Elicited Response models have not been loaded! "
-                           f"Call {__name__}.{load_er_models.__name__}() "
-                           "first.")
+        raise RuntimeError(
+            "Elicited Response models have not been loaded! "
+            f"Call {__name__}.{load_er_models.__name__}() "
+            "first."
+        )
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:
