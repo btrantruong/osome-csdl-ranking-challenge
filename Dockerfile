@@ -46,7 +46,7 @@ FROM python:3.12-slim as runtime
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:${PATH}" \
     DANTE_CACHE_DIR=/app/cache \
-    DANTE_CONFING_PATH="/app/config.ini" \
+    DANTE_CONFIG_PATH="/app/config.ini" \
     DANTE_LOG_DIR=/app/logs
 
 WORKDIR /app

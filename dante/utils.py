@@ -17,8 +17,7 @@ from importlib.resources import files
 
 # External dependencies imports
 import boto3
-from platformdirs import site_config_dir, user_config_dir, user_cache_dir, \
-    user_log_dir
+from platformdirs import site_config_dir, user_config_dir, user_cache_dir, user_log_dir
 
 # Root logger
 _root_logger = None
@@ -27,9 +26,18 @@ _root_logger = None
 _config = None
 
 # limit 'from .utils import *' to only these functions/variables
-__all__ = ['getcachedir', 'getconfig', 'fetchfroms3', 'remove_urls',
-           'clean_text', 'profileit', 'prof_to_csv', 'profile', 'save_to_json',
-           'get_logger']
+__all__ = [
+    "getcachedir",
+    "getconfig",
+    "fetchfroms3",
+    "remove_urls",
+    "clean_text",
+    "profileit",
+    "prof_to_csv",
+    "profile",
+    "save_to_json",
+    "get_logger",
+]
 
 
 def getcachedir():
@@ -72,12 +80,14 @@ def getconfig(fn="config.ini", force_reload=False):
         return _config
     logger = get_logger(__name__)
     # Set up paths for sample and user config files
-    sample_conf_path = str(files(__package__).joinpath(fn + '.sample'))
+    sample_conf_path = str(files(__package__).joinpath(fn + ".sample"))
     user_conf_dir = user_config_dir("dante", ensure_exists=True)
     user_conf_path = os.path.join(user_conf_dir, fn)
     if not os.path.exists(os.path.join(user_conf_dir, fn)):
-        logger.warning(f"Could not find {user_conf_path}. "
-                       f"Creating blank config from {sample_conf_path}")
+        logger.warning(
+            f"Could not find {user_conf_path}. "
+            f"Creating blank config from {sample_conf_path}"
+        )
         shutil.copy(sample_conf_path, user_conf_path)
     # Create config parser object
     _config = configparser.ConfigParser()
@@ -95,6 +105,9 @@ def getconfig(fn="config.ini", force_reload=False):
     if "DANTE_CONFIG_PATH" in os.environ:
         conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
     found_files = _config.read(conf_search_path)
+    if _config is None:
+        raise RuntimeError("!! Returning empty configuration !!")
+    return _config
 
 
 def fetchfroms3(prefix, base_dir):
@@ -114,24 +127,30 @@ def fetchfroms3(prefix, base_dir):
     # XXX need lock on the cache location to prevent workers attempting to
     # fetch at the same time in the same location.
     logger = get_logger(__name__)
-    config = getconfig()
-    region_name = config.get("S3", "S3_REGION_NAME")
-    access_key = config.get("S3", "S3_ACCESS_KEY")
-    access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-    bucket_name = config.get("S3", "S3_BUCKET")
-    logger.info(f"Fetching from s3://{bucket_name}/{prefix} region "
-                f"{region_name}")
-    s3 = boto3.resource(service_name="s3",
-                        region_name=region_name,
-                        aws_access_key_id=access_key,
-                        aws_secret_access_key=access_key_secret)
-    bucket = s3.Bucket(bucket_name)
-    for obj in bucket.objects.filter(Prefix=prefix):
-        src_path = obj.key
-        dest_path = os.path.join(base_dir, obj.key)
-        os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-        bucket.download_file(src_path, dest_path)
-        logger.info(f"Fetched: {dest_path}")
+    try:
+        config = getconfig()
+        region_name = config.get("S3", "S3_REGION_NAME")
+        access_key = config.get("S3", "S3_ACCESS_KEY")
+        access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
+        bucket_name = config.get("S3", "S3_BUCKET")
+        logger.info(f"Fetching from s3://{bucket_name}/{prefix} region {region_name}")
+        s3 = boto3.resource(
+            service_name="s3",
+            region_name=region_name,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=access_key_secret,
+        )
+        bucket = s3.Bucket(bucket_name)
+        for obj in bucket.objects.filter(Prefix=prefix):
+            src_path = obj.key
+            dest_path = os.path.join(base_dir, obj.key)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+            bucket.download_file(src_path, dest_path)
+            logger.info(f"Fetched: {dest_path}")
+    except Exception as e:
+        logger.error(
+            f"Failed to fetch model from S3 bucket: {e}. Bucket name: {bucket_name}"
+        )
 
 
 def remove_urls(text, replacement_text=""):
@@ -199,24 +218,19 @@ def profileit(func):
         with open(datafn, "w") as perf_file:
             perf_file.write(s.getvalue())
         return retval
+
     return wrapper
 
 
 # Code from https://gist.github.com/ralfstx/a173a7e4c37afa105a66f371a09aa83e
 def prof_to_csv(prof: cProfile.Profile):
     out_stream = io.StringIO()
-    (
-        pstats
-        .Stats(prof, stream=out_stream)
-        .sort_stats("cumulative")
-        .print_stats()
-    )
+    (pstats.Stats(prof, stream=out_stream).sort_stats("cumulative").print_stats())
     # pstats.print_stats()
     result = out_stream.getvalue()
     # chop off header lines
     result = "ncalls" + result.split("ncalls")[-1]
-    lines = [",".join(line.rstrip().split(None, 5))
-             for line in result.split("\n")]
+    lines = [",".join(line.rstrip().split(None, 5)) for line in result.split("\n")]
     return "\n".join(lines)
 
 
@@ -233,6 +247,7 @@ def profile(func):
         with open(datafn, "w+") as perf_file:
             perf_file.write(csv_line)
         return retval
+
     return wrapper
 
 
@@ -274,9 +289,7 @@ def _setup_logging(level=logging.INFO):
     for handler in logger.handlers:
         logger.removeHandler(handler)
     # Configure rotating file handler, keep 100MB logs max around
-    fh = logging.handlers.RotatingFileHandler(path,
-                                              maxBytes=1e7,
-                                              backupCount=10)
+    fh = logging.handlers.RotatingFileHandler(path, maxBytes=1e7, backupCount=10)
     fh.setFormatter(formatter)
     fh.setLevel(level=level)
     logger.addHandler(fh)
