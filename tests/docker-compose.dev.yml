@@ -32,7 +32,7 @@ services:
 
   ranker:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     depends_on:
       - redis
@@ -54,7 +54,7 @@ services:
 
   celery-scorer-worker0:
     build:
-      context: .
+      context: ..
       dockerfile: Dockerfile
     depends_on:
       - redis-celery-broker
@@ -72,7 +72,7 @@ services:
 
   # celery-scorer-worker1:
   #   build:
-  #     context: .
+  #     context: ..
   #     dockerfile: Dockerfile
   #   depends_on:
   #     - redis-celery-broker

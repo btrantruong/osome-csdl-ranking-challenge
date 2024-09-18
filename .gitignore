@@ -197,3 +197,4 @@ debug/
 *.ini
 
 !docker-compose.dev.yml
+tests/scorer_test/
