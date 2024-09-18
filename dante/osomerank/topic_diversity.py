@@ -27,7 +27,7 @@ def load_td_data():
     global TD_DATA, TD_MODEL
     logger = get_logger(__name__)
     if TD_DATA is not None:
-        logger.warn(
+        logger.warning(
             "Topic diversity data and model have been already loaded! "
             "Reloading from scratch."
         )

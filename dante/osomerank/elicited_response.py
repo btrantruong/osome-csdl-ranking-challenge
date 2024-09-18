@@ -42,7 +42,7 @@ def load_er_models():
     global MODEL_PIPELINES
     logger = get_logger(__name__)
     if MODEL_PIPELINES:  # non-empty dict
-        logger.warn("Models have been already loaded! Reloading from scratch.")
+        logger.warning("Models have been already loaded! Reloading from scratch.")
     model_names = ["toxicity_trigger", "attracted_sentiment"]
     platforms = ["twitter", "reddit"]
     cache_path = getcachedir()

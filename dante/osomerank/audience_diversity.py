@@ -83,7 +83,7 @@ def load_ad_data():
     global _DF, _PAT, _PLATFORM_PAT
     logger = get_logger(__name__)
     if _DF is not None:
-        logger.warn(
+        logger.warning(
             "Audience diversity data have been already loaded! "
             "Reloading from scratch."
         )
