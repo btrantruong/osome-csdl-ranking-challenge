@@ -16,6 +16,7 @@ __all__ = [
 
 # Standard library imports
 import os
+import configparser
 from collections import defaultdict
 
 # External dependencies imports
@@ -48,38 +49,48 @@ def load_er_models():
     platforms = ["twitter", "reddit"]
     cache_path = getcachedir()
     config = getconfig()
-    prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
-    er_model_dir = os.path.join(cache_path, prefix)
-    if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
-        logger.warning("No cached model found! Retrieving from S3.")
-        fetchfroms3(prefix, cache_path)
-    # load MODEL_PIPELINES
-    for model_name in model_names:
-        for platform in platforms:
-            try:
-                mod_prefix = config.get("ELICITED_RESPONSE", f"{model_name}_{platform}")
-                model_path = os.path.join(cache_path, mod_prefix)
-                tokenizer = AutoTokenizer.from_pretrained(
-                    pretrained_model_name_or_path=model_path
-                )
-                model = AutoModelForSequenceClassification.from_pretrained(
-                    pretrained_model_name_or_path=model_path,
-                    num_labels=1,
-                    ignore_mismatched_sizes=True,
-                )
-                pipeline = TextClassificationPipeline(
-                    model=model,
-                    tokenizer=tokenizer,
-                    max_length=512,
-                    truncation=True,
-                    batch_size=8,
-                    # top_k=None,
-                    # device="cuda",  # uncomment if GPU is available
-                )
-                MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
-                logger.info(f"Loaded {model_name}_{platform} model.")
-            except Exception as e:
-                logger.error(f"Failed to load {model_name}_{platform} model: {e}")
+
+    try:
+        prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
+        er_model_dir = os.path.join(cache_path, prefix)
+        if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
+            logger.warning("No cached model found! Retrieving from S3.")
+            fetchfroms3(prefix, cache_path)
+        # load MODEL_PIPELINES
+        for model_name in model_names:
+            for platform in platforms:
+                try:
+                    mod_prefix = config.get(
+                        "ELICITED_RESPONSE", f"{model_name}_{platform}"
+                    )
+                    model_path = os.path.join(cache_path, mod_prefix)
+                    tokenizer = AutoTokenizer.from_pretrained(
+                        pretrained_model_name_or_path=model_path
+                    )
+                    model = AutoModelForSequenceClassification.from_pretrained(
+                        pretrained_model_name_or_path=model_path,
+                        num_labels=1,
+                        ignore_mismatched_sizes=True,
+                    )
+                    pipeline = TextClassificationPipeline(
+                        model=model,
+                        tokenizer=tokenizer,
+                        max_length=512,
+                        truncation=True,
+                        batch_size=8,
+                        # top_k=None,
+                        # device="cuda",  # uncomment if GPU is available
+                    )
+                    MODEL_PIPELINES[f"{model_name}_{platform}"] = pipeline
+                    logger.info(f"Loaded {model_name}_{platform} model.")
+                except (configparser.NoSectionError, OSError) as e:
+                    logger.error(f"Failed to load {model_name}_{platform} model: {e}")
+                except Exception as e:
+                    logger.error(f"Failed to load {model_name}_{platform} model: {e}")
+
+    except Exception as e:
+        logger.error(f"Failed to load all elicited_response models: {e}")
+        raise
 
 
 def har_prediction(texts, platform):
@@ -97,11 +108,14 @@ def har_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError(
+        logger.warning(
             "Models have not been loaded! "
             f"Call {__name__}.{load_er_models.__name__}() "
             "first."
         )
+        # Return the same AD_AVG_SCORE for all posts if one of the ingredients for the prediction is missing for some reason
+        return [HAR_AVG_SCORE] * len(texts)
+
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["toxicity_trigger_twitter"]
     else:
@@ -114,7 +128,7 @@ def har_prediction(texts, platform):
         scores = [res["score"] for res in model.predict(texts)]
         return scores
     except Exception as e:
-        logger.exception(e)
+        logger.warning(f"Failed to generate HAR scores. Returning HAR_AVG_SCORE: {e}")
         return [HAR_AVG_SCORE] * len(texts)
 
 
@@ -133,11 +147,13 @@ def ar_prediction(texts, platform):
     """
     global MODEL_PIPELINES
     if not MODEL_PIPELINES:  # empty dict
-        raise RuntimeError(
+        logger.warning(
             "Elicited Response models have not been loaded! "
             f"Call {__name__}.{load_er_models.__name__}() "
             "first."
         )
+        return [AR_AVG_SCORE] * len(texts)
+
     if (platform.lower() == "twitter") | (platform.lower() == "facebook"):
         model = MODEL_PIPELINES["attracted_sentiment_twitter"]
     else:
@@ -150,5 +166,7 @@ def ar_prediction(texts, platform):
         scores = [res["score"] for res in model.predict(texts)]
         return scores
     except Exception as e:
-        logger.exception(e)
+        logger.warning(
+            f"Failed to generate AR scores. Returning default AR_AVG_SCORE: {e}"
+        )
         return [AR_AVG_SCORE] * len(texts)

@@ -21,6 +21,7 @@ import re
 import json
 
 from urllib.parse import urlsplit
+import configparser
 
 # external dependencies imports
 import pandas as pd
@@ -136,9 +137,15 @@ def load_ad_data():
                 visitor_var_quantile.append(0)
         _DF["visitor_var"] = visitor_var_quantile
         _PAT = _list_to_pattern(*_DF.index)
+    except (configparser.NoSectionError, OSError) as e:
+        logger.error(f"Failed to load audience diversity data or prediction model. {e}")
+        raise
+    except ValueError as e:
+        logger.error(f"Failed to bin visitor data into quantiles. {e}")
+        raise
     except Exception as e:
-        logger.error(f"Failed to load audience diversity data: {e}")
-        _DF = None  # Ensure _DF is set to None if loading fails
+        logger.error(f"Failed to prep audience diversity data: {e}")
+        raise
 
 
 def ad_prediction(feed_posts, platform=None, default=-1000):
@@ -160,10 +167,13 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     """
     global _DF, _PAT, _PLATFORM_PAT
     if _DF is None or _PAT is None:
-        raise RuntimeError(
+        logger.warning(
             "Audience diversity data have not been loaded! "
             f"Call {__name__}.{load_ad_data.__name__}() first."
         )
+        # Return the same AD_AVG_SCORE for all posts if one of the ingredients for the prediction is missing for some reason
+        return [AD_AVG_SCORE] * len(feed_posts)
+
     urls_available = []
     urls_index = []
     audience_diversity_val = []

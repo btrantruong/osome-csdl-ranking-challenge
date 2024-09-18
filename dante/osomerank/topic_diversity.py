@@ -6,11 +6,12 @@ Created on Sun Jun 16 03:45:55 2024
 @author: saumya (modified by Bao and Giovanni)
 """
 
-__all__ = ["td_prediction", "load_td_data"]
+__all__ = ["td_prediction", "load_td_data", "TD_STD_MEAN"]
 
 # Standard library imports
 import json
 import os
+import configparser
 
 # External dependencies imports
 from bertopic import BERTopic
@@ -21,6 +22,7 @@ from ..utils import getcachedir, getconfig, fetchfroms3, get_logger
 
 TD_DATA = None
 TD_MODEL = None
+TD_STD_MEAN = 3
 
 logger = get_logger(__name__)
 
@@ -41,21 +43,24 @@ def load_td_data():
         if not os.path.exists(cached_model_dir):
             logger.warning("No cached model found! Retrieving from S3.")
             fetchfroms3(prefix, cache_path)
+
         # XXX: do not calculate probabilities?
         TD_MODEL = BERTopic.load(cached_model_dir)
         logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
-    except Exception as e:
-        logger.error(f"Failed to load BERTopic model from {cached_model_dir}: {e}")
 
-    try:
         json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
         cached_json_path = os.path.join(cache_path, json_fn)
         with open(cached_json_path) as ff:
             TD_DATA = json.load(ff)
-    except Exception as e:
+
+    except (configparser.NoSectionError, OSError) as e:
         logger.error(
-            f"Failed to load topic diversity data from {cached_json_path}: {e}"
+            f"Failed to load BERTopic model or topic diversity data from {cached_json_path}: {e}"
         )
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in {__name__}.{load_td_data.__name__}(): {e}")
+        raise
 
     TD_MEAN = np.mean([TD_DATA[k] for k in TD_DATA])
     TD_STD = np.std([TD_DATA[k] for k in TD_DATA])
@@ -106,10 +111,13 @@ def td_prediction(feed_posts, platform=None, default=-1000):
     """
     global TD_DATA, TD_MODEL
     if TD_DATA is None or TD_MODEL is None:
-        raise RuntimeError(
+        logger.warning(
             "Topic diversity data/models have not been loaded! "
             f"Call {__name__}.{load_td_data.__name__}() first."
         )
+        # Return the same TD_STD_MEAN for all posts if one of the ingredients for the prediction is missing for some reason
+        return [TD_STD_MEAN] * len(feed_posts)
+
     tmp = []
     docs = []
     docs_idx = []
@@ -117,7 +125,7 @@ def td_prediction(feed_posts, platform=None, default=-1000):
     for i, post in enumerate(feed_posts):
         logger.debug(f"Post-{i}: {post}")
         # Initialize with the standardized mean
-        tmp.append(3)
+        tmp.append(TD_STD_MEAN)
         if post["text"] != "NA":
             docs.append(post["text"])
             docs_idx.append(i)
