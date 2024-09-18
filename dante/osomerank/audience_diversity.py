@@ -75,13 +75,15 @@ _DF = None  # data frame
 _PAT = None  # compiled regexp
 _PLATFORM_PAT = _list_to_pattern(*platform_urls)
 
+logger = get_logger(__name__)
+
 
 def load_ad_data():
     """
     Download and load models from S3
     """
     global _DF, _PAT, _PLATFORM_PAT
-    logger = get_logger(__name__)
+
     if _DF is not None:
         logger.warning(
             "Audience diversity data have been already loaded! "
@@ -165,7 +167,6 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     urls_available = []
     urls_index = []
     audience_diversity_val = []
-    logger = get_logger(__name__)
     for idx, feed_post in enumerate(feed_posts):
         audience_diversity_val.append(default)
         logger.debug(f"Post-{idx}: {feed_post}")

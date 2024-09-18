@@ -22,10 +22,11 @@ from ..utils import getcachedir, getconfig, fetchfroms3, get_logger
 TD_DATA = None
 TD_MODEL = None
 
+logger = get_logger(__name__)
+
 
 def load_td_data():
     global TD_DATA, TD_MODEL
-    logger = get_logger(__name__)
     if TD_DATA is not None:
         logger.warning(
             "Topic diversity data and model have been already loaded! "
@@ -40,12 +41,11 @@ def load_td_data():
         if not os.path.exists(cached_model_dir):
             logger.warning("No cached model found! Retrieving from S3.")
             fetchfroms3(prefix, cache_path)
-            # XXX: do not calculate probabilities?
-            TD_MODEL = BERTopic.load(cached_model_dir)
-            logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
+        # XXX: do not calculate probabilities?
+        TD_MODEL = BERTopic.load(cached_model_dir)
+        logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
     except Exception as e:
         logger.error(f"Failed to load BERTopic model from {cached_model_dir}: {e}")
-        return  # Exit the function if the model fails to load
 
     try:
         json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
@@ -56,7 +56,7 @@ def load_td_data():
         logger.error(
             f"Failed to load topic diversity data from {cached_json_path}: {e}"
         )
-        return
+
     TD_MEAN = np.mean([TD_DATA[k] for k in TD_DATA])
     TD_STD = np.std([TD_DATA[k] for k in TD_DATA])
     for k in TD_DATA:
@@ -113,7 +113,6 @@ def td_prediction(feed_posts, platform=None, default=-1000):
     tmp = []
     docs = []
     docs_idx = []
-    logger = get_logger(__name__)
     for i, post in enumerate(feed_posts):
         logger.debug(f"Post-{i}: {post}")
         if post["text"] != "NA":
