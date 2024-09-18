@@ -17,6 +17,7 @@ from importlib.resources import files
 
 # External dependencies imports
 import boto3
+import botocore.exceptions
 from platformdirs import site_config_dir, user_config_dir, user_cache_dir, user_log_dir
 
 # Root logger
@@ -89,6 +90,7 @@ def getconfig(fn="config.ini", force_reload=False):
             f"Creating blank config from {sample_conf_path}"
         )
         shutil.copy(sample_conf_path, user_conf_path)
+
     # Create config parser object
     _config = configparser.ConfigParser()
     # Read default config from sample file bundled in the package
@@ -105,8 +107,7 @@ def getconfig(fn="config.ini", force_reload=False):
     if "DANTE_CONFIG_PATH" in os.environ:
         conf_search_path.append(os.environ["DANTE_CONFIG_PATH"])
     found_files = _config.read(conf_search_path)
-    if _config is None:
-        raise RuntimeError("!! Returning empty configuration !!")
+
     return _config
 
 
@@ -145,12 +146,25 @@ def fetchfroms3(prefix, base_dir):
             src_path = obj.key
             dest_path = os.path.join(base_dir, obj.key)
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-            bucket.download_file(src_path, dest_path)
+
+            try:
+                bucket.download_file(src_path, dest_path)
+            except botocore.exceptions.ClientError as e:
+                e.add_note(
+                    f"Failed to download file {src_path} from S3 bucket {bucket_name}: {e}"
+                )
+                raise
+
             logger.info(f"Fetched: {dest_path}")
+    except configparser.NoSectionError as e:
+        e.add_note(f"Key not found in config: {e}")
+        raise
+    except botocore.exceptions.BotoCoreError as e:
+        e.add_note(f"Failed to initialize S3 resource: {e}")
+        raise
     except Exception as e:
-        logger.error(
-            f"Failed to fetch model from S3 bucket: {e}. Bucket name: {bucket_name}"
-        )
+        e.add_note(f"An error occurred in fetchfroms3(): {e}")
+        raise
 
 
 def remove_urls(text, replacement_text=""):
