@@ -184,7 +184,7 @@ def do_batch_scoring(
         records = (item["text"] for item in input.batch)
     else:
         records = input.batch
-    scores = prediction_function(records, input.platform)
+    scores, metrics = prediction_function(records, input.platform)
     result = dict()
     for item, score in zip(input.batch, scores):
         result[item["id"]] = score

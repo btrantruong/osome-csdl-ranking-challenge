@@ -172,7 +172,7 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
             f"Call {__name__}.{load_ad_data.__name__}() first."
         )
         # Return the same AD_AVG_SCORE for all posts if one of the ingredients for the prediction is missing for some reason
-        return [AD_AVG_SCORE] * len(feed_posts)
+        return [AD_AVG_SCORE] * len(feed_posts), []
 
     urls_available = []
     urls_index = []
@@ -227,4 +227,4 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
         #})
     #with open('url_analysis.json', 'w') as fin:
     #    json.dump({'data': log_url}, fin)
-    return audience_diversity_val
+    return audience_diversity_val, []

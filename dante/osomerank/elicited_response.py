@@ -173,7 +173,7 @@ def har_prediction(texts, platform):
     Returns:
         HaR score (float): The predicted HaR score for a feed_post
     """
-    default_har = [AVG_SCORES[platform.lower()]['HAR']] * len(texts), [] * len(texts)
+    default_har = [AVG_SCORES[platform.lower()]['HAR']] * len(texts), []
     global MODELS
     global TOKENIZERS
     if (not MODELS) | (not TOKENIZERS):  # empty dict
@@ -215,7 +215,7 @@ def ar_prediction(texts, platform):
     Returns:
         AR score (float): The predicted AR score for a feed_post
     """
-    default_ar = [AVG_SCORES[platform.lower()]['AR']] * len(texts), [] * len(texts)
+    default_ar = [AVG_SCORES[platform.lower()]['AR']] * len(texts), []
     global MODELS
     global TOKENIZERS
     if (not MODELS) | (not TOKENIZERS):  # empty dict
