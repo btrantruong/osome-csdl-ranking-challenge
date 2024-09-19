@@ -94,26 +94,25 @@ def td_prediction(feed_posts, platform=None, default=-1000):
         raise RuntimeError("Topic diversity data/models have not been loaded! "
                            f"Call {__name__}.{load_td_data.__name__}() first.")
     tmp = []
+    topics = []
     docs = []
     docs_idx = []
     logger = get_logger(__name__)
     for i, post in enumerate(feed_posts):
         logger.debug(f"Post-{i}: {post}")
+        # Initialize with the standardized mean
+        tmp.append(TD_STD_MEAN)
+        topics.append(-100)
         if post["text"] != "NA":
             docs.append(post["text"])
             docs_idx.append(i)
-        else:
-            # No text, return standardize mean
-            tmp.append(0.0)  # the standardized mean
     if docs:
         # XXX create BERTopic model with calculate_probabilities=False? (Speeds
         # up things)
         topics, _ = TD_MODEL.transform(docs)
         for di, top in zip(docs_idx, topics):
+            topics[di] = top
             if int(top) != -1:
                 # standardized diversity for that topic
                 tmp[di] = TD_DATA[str(top)]
-            else:
-                # No topic, return standardized mean
-                tmp[di] = 3
-    return tmp
+    return tmp,topics
