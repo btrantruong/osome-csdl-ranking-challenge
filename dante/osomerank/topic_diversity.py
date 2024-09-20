@@ -139,4 +139,4 @@ def td_prediction(feed_posts, platform=None, default=-1000):
             if int(top) != -1:
                 # standardized diversity for that topic
                 tmp[di] = TD_DATA[str(top)]
-    return tmp,topic_ids
+    return tmp, topic_ids

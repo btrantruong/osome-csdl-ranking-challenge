@@ -50,19 +50,19 @@ def load_er_models():
     model_names = ["toxicity_trigger", "attracted_sentiment"]
     platforms = ["twitter", "reddit"]
     cache_path = getcachedir()
-
-    try:
-        prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
-        er_model_dir = os.path.join(cache_path, prefix)
-        if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
-            logger.warning("No cached model found! Retrieving from S3.")
-            fetchfroms3(prefix, cache_path)
-        # load MODEL_PIPELINES
-        for model_name in model_names:
-            for platform in platforms:
-                mod_prefix = config.get("ELICITED_RESPONSE",
-                                        f"{model_name}_{platform}")
-                model_path = os.path.join(cache_path, mod_prefix)
+    config = getconfig()
+    prefix = config.get("ELICITED_RESPONSE", "elicited_response_dir")
+    er_model_dir = os.path.join(cache_path, prefix)
+    if not os.path.exists(er_model_dir) or not os.listdir(er_model_dir):
+        logger.warning("No cached model found! Retrieving from S3.")
+        fetchfroms3(prefix, cache_path)
+    # load MODEL_PIPELINES
+    for model_name in model_names:
+        for platform in platforms:
+            mod_prefix = config.get("ELICITED_RESPONSE",
+                                    f"{model_name}_{platform}")
+            model_path = os.path.join(cache_path, mod_prefix)
+            try:
                 tokenizer = AutoTokenizer.from_pretrained(
                     pretrained_model_name_or_path=model_path,
                     truncation=True,
@@ -81,9 +81,17 @@ def load_er_models():
                 MODELS[f"{model_name}_{platform}"] = model
                 TOKENIZERS[f"{model_name}_{platform}"] = tokenizer
                 logger.info(f"Loaded {model_name}_{platform} model.")
-    except Exception as e:
-        logger.error(f"Failed to load all elicited_response models: {e}")
-        raise
+            except OSError as e:
+                logger.error(f"Failed to load {model_name}_{platform} model: {e}")
+                raise
+            except Exception as e:
+                logger.error(
+                    f"Unexpected error while loading {model_name}_{platform} model: {e}"
+                )
+                raise
+    if (not MODELS) | (not TOKENIZERS):
+        logger.error("No models were loaded successfully.")
+        raise RuntimeError("Failed to load any elicited_response models.")
 
 def predict(texts, tokenizer, model, initial_batch_size=32, uninf_indices={0, 1, 2, 3, 4, 6, 17, 27, 35, 113, 116}):
     scores = []
