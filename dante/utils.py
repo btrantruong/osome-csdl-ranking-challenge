@@ -128,20 +128,29 @@ def fetchfroms3(prefix, base_dir):
     # XXX need lock on the cache location to prevent workers attempting to
     # fetch at the same time in the same location.
     logger = get_logger(__name__)
+
+    config = getconfig()
+    region_name = config.get("S3", "S3_REGION_NAME", fallback=None)
+    access_key = config.get("S3", "S3_ACCESS_KEY", fallback=None)
+    access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY", fallback=None)
+    bucket_name = config.get("S3", "S3_BUCKET", fallback=None)
+    if not all([region_name, access_key, access_key_secret, bucket_name]):
+        raise configparser.NoSectionError("S3 settings not found in configuration file")
+    logger.info(f"Fetching from s3://{bucket_name}/{prefix} region {region_name}")
+
     try:
-        config = getconfig()
-        region_name = config.get("S3", "S3_REGION_NAME")
-        access_key = config.get("S3", "S3_ACCESS_KEY")
-        access_key_secret = config.get("S3", "S3_SECRET_ACCESS_KEY")
-        bucket_name = config.get("S3", "S3_BUCKET")
-        logger.info(f"Fetching from s3://{bucket_name}/{prefix} region {region_name}")
-        s3 = boto3.resource(
-            service_name="s3",
-            region_name=region_name,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=access_key_secret,
-        )
-        bucket = s3.Bucket(bucket_name)
+        try:
+            s3 = boto3.resource(
+                service_name="s3",
+                region_name=region_name,
+                aws_access_key_id=access_key,
+                aws_secret_access_key=access_key_secret,
+            )
+            bucket = s3.Bucket(bucket_name)
+        except botocore.exceptions.BotoCoreError as e:
+            e.add_note(f"Failed to initialize S3 resource: {e}")
+            raise
+
         for obj in bucket.objects.filter(Prefix=prefix):
             src_path = obj.key
             dest_path = os.path.join(base_dir, obj.key)
@@ -156,12 +165,7 @@ def fetchfroms3(prefix, base_dir):
                 raise
 
             logger.info(f"Fetched: {dest_path}")
-    except configparser.NoSectionError as e:
-        e.add_note(f"Key not found in config: {e}")
-        raise
-    except botocore.exceptions.BotoCoreError as e:
-        e.add_note(f"Failed to initialize S3 resource: {e}")
-        raise
+
     except Exception as e:
         e.add_note(f"An error occurred in fetchfroms3(): {e}")
         raise
