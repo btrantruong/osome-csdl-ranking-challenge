@@ -198,3 +198,4 @@ debug/
 
 tests/
 !tests/*.yml
+!tests/rc-extension-data/

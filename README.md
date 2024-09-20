@@ -26,11 +26,7 @@ These variables are specified in `docker-compose.yml` (To be updated). Copied he
 | `DANTE_CONFIG_PATH` | Path to configuration file      | `/app/config.ini` |
 | `DANTE_LOG_DIR`     | Location for logs               | `/app/logs/       |
 
-## How to run locally
-
-All commands are executed from the root directory of the repository.
-
-### Setup
+## Setup
 
 1. Make sure you have docker and docker-compose installed.
 2. Make sure you have celery, redis-py, and pytest installed.
@@ -48,13 +44,13 @@ docker build -f docker/Dockerfile.ranker -t ranker .
 docker run --mount type=bind,src=${DANTE_CACHE_DIR},dst=/app/cache ranker
 ```
 
-### Run test on the ranker 
+## Run test on the ranker 
+- Ensure you have all the dependencies installed by using `poetry install` from root directory
+- `poetry shell` 
+- Once you have the container running, test the ranker using this command:
+    `python tests/latency.py`
 
-Once you have the container running, test the ranker using this command:
-
-`pytest dante/app/ranking_server/ranking_server_test.py`
-
-### Clearing Space
+## Clearing Space
 
 Your personal machine might fill up when repeatedly building all these docker images and volumes. To clear space, run:
 

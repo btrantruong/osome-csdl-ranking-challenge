@@ -50,7 +50,6 @@ services:
       - type: bind
         source: /Users/baott/Library/Caches/dante
         target: /app/cache
-    
 
   celery-scorer-worker0:
     build:
@@ -69,24 +68,35 @@ services:
       - type: bind
         source: /Users/baott/Library/Caches/dante
         target: /app/cache
+    profiles:
+      - no-gpu
 
-  # celery-scorer-worker1:
-  #   build:
-  #     context: ..
-  #     dockerfile: Dockerfile
-  #   depends_on:
-  #     - redis-celery-broker
-  #   environment:
-  #     CELERY_BROKER: redis://redis-celery-broker:6380
-  #     CELERY_BACKEND: redis://redis-celery-broker:6380
-  #   command: ["celery", "-A", "dante.app.scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info"]
-  #   volumes:
-  #     - type: bind
-  #       source: ${PWD}/config.ini
-  #       target: /app/config.ini
-  #     - type: bind
-  #       source: ${HOME}/.cache/dante
-  #       target: /app/cache
+  celery-scorer-worker1:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      - redis-celery-broker
+    environment:
+      CELERY_BROKER: redis://redis-celery-broker:6380
+      CELERY_BACKEND: redis://redis-celery-broker:6380
+    command: ["celery", "-A", "dante.app.scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: /Users/baott/Library/Caches/dante
+        target: /app/cache
+    profiles:
+      - gpu
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
 
 volumes:
   postgres_data:

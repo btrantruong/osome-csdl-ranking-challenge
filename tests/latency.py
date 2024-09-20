@@ -62,7 +62,7 @@ if __name__ == "__main__":
     file_pattern = "rc-extension-data/twitter_2024-07-19*.json"
     json_files = glob.glob(file_pattern)
 
-    url = "http://127.0.0.1:5001"
+    url = "http://127.0.0.1:8000"
 
     result_dir = f"{os.path.dirname(__file__)}/results"
     if not os.path.exists(result_dir):
@@ -72,7 +72,7 @@ if __name__ == "__main__":
         results_df = pd.DataFrame(columns=["Platform", "Latency", "Num_Items"])
         # Step 2: Loop through each file and process it
         for idx, file_path in enumerate(json_files):
-            if idx%10==0:
+            if idx % 10 == 0:
                 print(f"{idx} requests proceeded")
             fname = os.path.basename(file_path).replace(".json", "")
             with open(file_path, "r") as file:
