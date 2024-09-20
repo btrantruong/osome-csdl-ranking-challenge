@@ -91,7 +91,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     ranked_results = []
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
-    for item_id, har_score in har_scores:
+    for item_id, har_score in har_scores.items():
         ar_score = ar_scores[item_id]
         har_normalized = bisect(boundaries, har_score)
         ad_score = ad_scores[item_id] if ad_scores[item_id] \
@@ -197,6 +197,8 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                 scores[task_name] = future.result()
             except Exception as exc:
                 logger.error(f"{task_name} generated an exception: {exc}")
+
+    # har_scores dict[str, float]: Output dictionary for the task: (k-v) pairs are (item ID-score)
     har_scores = scores["har_scores"]
     ar_scores = scores["ar_scores"]
     ad_link_scores = scores["ad_scores"]
