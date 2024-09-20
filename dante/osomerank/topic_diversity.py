@@ -115,9 +115,10 @@ def td_prediction(feed_posts, platform=None, default=-1000):
             f"Call {__name__}.{load_td_data.__name__}() first."
         )
         # Return the same TD_STD_MEAN for all posts if one of the ingredients for the prediction is missing for some reason
-        return [TD_STD_MEAN] * len(feed_posts)
+        return [TD_STD_MEAN] * len(feed_posts), []
 
     tmp = []
+    topic_ids = []
     docs = []
     docs_idx = []
     logger = get_logger(__name__)
@@ -125,6 +126,7 @@ def td_prediction(feed_posts, platform=None, default=-1000):
         logger.debug(f"Post-{i}: {post}")
         # Initialize with the standardized mean
         tmp.append(TD_STD_MEAN)
+        topic_ids.append(-100)
         if post["text"] != "NA":
             docs.append(post["text"])
             docs_idx.append(i)
@@ -133,7 +135,8 @@ def td_prediction(feed_posts, platform=None, default=-1000):
         # up things)
         topics, _ = TD_MODEL.transform(docs)
         for di, top in zip(docs_idx, topics):
+            topic_ids[di] = top
             if int(top) != -1:
                 # standardized diversity for that topic
                 tmp[di] = TD_DATA[str(top)]
-    return tmp
+    return tmp, topic_ids

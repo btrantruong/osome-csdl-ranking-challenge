@@ -132,7 +132,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
             redis_client_obj[ranking_request.session.user_id] = (
                 ranking_request.survey.ideology
             )
-        platform = ranking_request.session.platform
+        platform = ranking_request.session.platform.lower()
         post_items = ranking_request.items
         post_data = [
             {
@@ -183,10 +183,12 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
                 except Exception as exc:
                     logger.error(f"{task_name} generated an exception: {exc}")
 
+
+    # har_scores dict[str, float]: Output dictionary for the task: (k-v) pairs are (item ID-score)
         ranked_results = combine_scores(
             har_scores=scores["har_scores"],
             ar_scores=scores["ar_scores"],
-            ad_link_scores=scores["ad_scores"],
+            ad_scores=scores["ad_scores"],
             td_scores=scores["td_scores"],
         )
         ranked_ids = [content.get("id", None) for content in ranked_results]

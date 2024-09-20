@@ -170,7 +170,7 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
             f"Call {__name__}.{load_ad_data.__name__}() first."
         )
         # Return the same AD_AVG_SCORE for all posts if one of the ingredients for the prediction is missing for some reason
-        return [AD_AVG_SCORE] * len(feed_posts)
+        return [AD_AVG_SCORE] * len(feed_posts), []
 
     urls_available = []
     urls_index = []
@@ -184,15 +184,18 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                 logger.info(f"Got URL : {urll}")
                 urls_index.append(idx)
                 urls_available.append(urll)
+    """
+    #The following code is for domain unshortening
     if urls_available:
         # XXX need redis connection string here
         urls_available_unshortened = unshorten(*urls_available, cache_redis=False)
     else:
         urls_available_unshortened = []
+    """
     log_url = []
     for idx, url_available in enumerate(urls_available):
         domain = urlsplit(url_available).netloc
-        domain_unshorten = urlsplit(url_available).netloc
+        #domain_unshorten = urlsplit(url_available).netloc
         found_domain = False
         if ((m := re.search(_PAT, domain)) is not None) and (
             re.search(_PLATFORM_PAT, urll) is None
@@ -202,25 +205,23 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
                 "visitor_var"
             ]
             found_domain = True
-        if ((m := re.search(_PAT, domain_unshorten)) is not None) and (
-            re.search(_PLATFORM_PAT, urll) is None
-        ):
-            matched_domain_unshorten = m.group()
-            found_domain_unshorten = True
-        else:
-            matched_domain_unshorten = None
-            found_domain_unshorten = False
-        log_url.append(
-            {
-                "url": url_available,
-                "url_unshorten": urls_available_unshortened[idx],
-                "domain": domain,
-                "domain_unshorten": domain_unshorten,
-                "found_domain": found_domain,
-                "found_domain_unshorten": found_domain_unshorten,
-                "matched_domain_unshorten": matched_domain_unshorten,
-            }
-        )
-    with open("url_analysis.json", "w") as fin:
-        json.dump({"data": log_url}, fin)
-    return audience_diversity_val
+        #if ((m := re.search(_PAT, domain_unshorten)) is not None) and (
+        #    re.search(_PLATFORM_PAT, urll) is None
+        #):
+        #    matched_domain_unshorten = m.group()
+        #    found_domain_unshorten = True
+        #else:
+        #    matched_domain_unshorten = None
+        #    found_domain_unshorten = False
+        #log_url.append({
+        #    'url': url_available,
+        #    'url_unshorten': urls_available_unshortened[idx],
+        #    'domain': domain,
+        #    'domain_unshorten': domain_unshorten,
+        #    'found_domain': found_domain,
+        #    'found_domain_unshorten': found_domain_unshorten,
+        #    'matched_domain_unshorten': matched_domain_unshorten
+        #})
+    #with open('url_analysis.json', 'w') as fin:
+    #    json.dump({'data': log_url}, fin)
+    return audience_diversity_val, []

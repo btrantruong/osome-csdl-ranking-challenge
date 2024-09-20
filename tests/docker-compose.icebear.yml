@@ -1,0 +1,99 @@
+services:
+
+  database:
+    image: postgres:15.7-alpine
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: "postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+      PGPORT: "5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 1s
+      timeout: 14s
+      retries: 15
+      start_period: 2m
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
+  redis-celery-broker:
+    image: redis
+    ports:
+      - "6380:6380"
+    command: ["redis-server", "--port", "6380"]
+
+  ranker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    environment:
+      REDIS_CONNECTION_STRING: redis://redis:6379
+      CELERY_BROKER: redis://redis-celery-broker:6380
+      CELERY_BACKEND: redis://redis-celery-broker:6380
+    command: ["uvicorn", "--host", "0.0.0.0", "--port", "5001", "dante.app.ranking_server.ranking_server:app"]
+    ports:
+      - "5001:5001"
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: ${HOME}/.cache/dante
+        target: /app/cache
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../dante/app/ranking_server
+          target: /app/dante/app/ranking_server
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ../Dockerfile
+
+  celery-scorer-worker0:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      - redis-celery-broker
+    environment:
+      CELERY_BROKER: redis://redis-celery-broker:6380
+      CELERY_BACKEND: redis://redis-celery-broker:6380
+    command: ["celery", "-A", "dante.app.scorer_worker.tasks", "worker", "-Q", "scorer", "--loglevel=info", "--pool=solo"]
+    volumes:
+      - type: bind
+        source: ${PWD}/config.ini
+        target: /app/config.ini
+      - type: bind
+        source: ${HOME}/.cache/dante
+        target: /app/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    develop:
+      watch:
+        - action: sync
+          path: ../dante/app/scorer_worker
+          target: /app/dante/app/scorer_worker
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ../Dockerfile
+
+volumes:
+  postgres_data:
+    driver: local
