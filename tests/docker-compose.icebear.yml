@@ -50,9 +50,17 @@ services:
       - type: bind
         source: ${HOME}/.cache/dante
         target: /app/cache
-    
+    develop:
+      watch:
+        - action: sync+restart
+          path: ../dante/app/ranking_server
+          target: /app/dante/app/ranking_server
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ../Dockerfile
+
   celery-scorer-worker0:
-    image: nvidia/cuda:12.3.1-base-ubuntu20.04
     build:
       context: ..
       dockerfile: Dockerfile
@@ -76,7 +84,15 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-
+    develop:
+      watch:
+        - action: sync
+          path: ../dante/app/scorer_worker
+          target: /app/dante/app/scorer_worker
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ../Dockerfile
 
 volumes:
   postgres_data:
