@@ -19,3 +19,4 @@ BACKEND = f"{os.getenv('CELERY_BACKEND', 'redis://localhost:6380')}/0"
 app = Celery("scorer_worker", backend=BACKEND, broker=BROKER)
 app.autodiscover_tasks(["dante.app.scorer_worker.tasks"], force=True)
 app.conf.task_default_queue = "scorer"
+app.conf.broker_connection_retry_on_startup = True

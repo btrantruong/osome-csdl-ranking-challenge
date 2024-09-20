@@ -48,8 +48,7 @@ def redis_client():
     c = getconfig()
     # Get connection string from environment or use value from configuration
     # file as a fallback
-    REDIS_DB = os.getenv('REDIS_CONNECTION_STRING',
-                         c.get("RANKER", "redis_db"))
+    REDIS_DB = os.getenv("REDIS_CONNECTION_STRING", c.get("RANKER", "redis_db"))
     if memoized_redis_client is None:
         memoized_redis_client = redis.Redis.from_url(REDIS_DB)
     return memoized_redis_client
@@ -91,11 +90,13 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     ranked_results = []
     non_har_posts = []  # these posts are ok
     har_posts = []  # these posts elicit toxicity
-    for item_id, har_score in har_scores:
+    # TODO: find a way to vectorize this aggregation
+    for item_id, har_score in har_scores.items():
         ar_score = ar_scores[item_id]
         har_normalized = bisect(boundaries, har_score)
-        ad_score = ad_scores[item_id] if ad_scores[item_id] \
-            != -1000 else td_scores[item_id]
+        ad_score = (
+            ad_scores[item_id] if ad_scores[item_id] != -1000 else td_scores[item_id]
+        )
         processed_item = {
             "id": item_id,
             "audience_diversity": ad_score,
@@ -113,11 +114,7 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
     # (sentiment)
     multisort(
         non_har_posts,
-        [
-            ("har_normalized", False),
-            ("audience_diversity", True),
-            ("ar_score", True)
-        ],
+        [("har_normalized", False), ("audience_diversity", True), ("ar_score", True)],
     )
     multisort(har_posts, [("har_normalized", False), ("ar_score", True)])
     # concat the two lists, prioritizing non-HaR posts
@@ -128,84 +125,76 @@ def combine_scores(har_scores, ar_scores, ad_scores, td_scores):
 
 @app.post("/rank")
 def rank(ranking_request: RankingRequest) -> RankingResponse:
-    logger.info("Received ranking request")
-    redis_client_obj = redis_client()
-    if ranking_request.survey:
-        redis_client_obj[ranking_request.session.user_id] = (
-            ranking_request.survey.ideology
-        )
-    platform = ranking_request.session.platform
-    post_items = ranking_request.items
-    post_data = [
-        {
-            "id": item.id,
-            "text": (
-                clean_text(item.text) if platform != "reddit"
-                else clean_text(get_reddit_text(item))
+    try:
+        logger.info("Received ranking request")
+        redis_client_obj = redis_client()
+        if ranking_request.survey:
+            redis_client_obj[ranking_request.session.user_id] = (
+                ranking_request.survey.ideology
+            )
+        platform = ranking_request.session.platform
+        post_items = ranking_request.items
+        post_data = [
+            {
+                "id": item.id,
+                "text": (
+                    clean_text(item.text)
+                    if platform != "reddit"
+                    else clean_text(get_reddit_text(item))
+                ),
+                "urls": (
+                    jsonable_encoder(item.embedded_urls) if item.embedded_urls else []
+                ),
+            }
+            for item in post_items
+        ]
+        tasks = {
+            "har_scores": (
+                "dante.app.scorer_worker.tasks.har_batch_scorer",
+                post_data,
+                platform,
             ),
-            "urls": jsonable_encoder(item.embedded_urls)
-            if item.embedded_urls else [],
+            "ar_scores": (
+                "dante.app.scorer_worker.tasks.ar_batch_scorer",
+                post_data,
+                platform,
+            ),
+            "ad_scores": (
+                "dante.app.scorer_worker.tasks.ad_batch_scorer",
+                post_data,
+                platform,
+            ),
+            "td_scores": (
+                "dante.app.scorer_worker.tasks.td_batch_scorer",
+                post_data,
+                platform,
+            ),
         }
-        for item in post_items
-    ]
-    # # Using ThreadPoolExecutor instead, see below
-    #
-    # # get different scores
-    # har_scores = compute_batch_scores(
-    #     "dante.app.scorer_worker.tasks.har_batch_scorer", post_data, platform
-    # )
-    # ar_scores = compute_batch_scores(
-    #     "dante.app.scorer_worker.tasks.ar_batch_scorer", post_data, platform
-    # )
-    # ad_link_scores = compute_batch_scores(
-    #     "dante.app.scorer_worker.tasks.ad_batch_scorer", post_data, platform
-    # )
-    # td_scores = compute_batch_scores(
-    #     "dante.app.scorer_worker.tasks.td_batch_scorer", post_data, platform
-    # )
-    tasks = {
-        "har_scores": (
-            "dante.app.scorer_worker.tasks.har_batch_scorer",
-            post_data,
-            platform,
-        ),
-        "ar_scores": (
-            "dante.app.scorer_worker.tasks.ar_batch_scorer",
-            post_data,
-            platform,
-        ),
-        "ad_scores": (
-            "dante.app.scorer_worker.tasks.ad_batch_scorer",
-            post_data,
-            platform,
-        ),
-        "td_scores": (
-            "dante.app.scorer_worker.tasks.td_batch_scorer",
-            post_data,
-            platform,
-        ),
-    }
-    scores = {}
-    with ThreadPoolExecutor() as executor:
-        future_to_task = {
-            executor.submit(execute_task, *args): name
-            for name, args in tasks.items()
-        }
-        for future in as_completed(future_to_task):
-            task_name = future_to_task[future]
-            try:
-                scores[task_name] = future.result()
-            except Exception as exc:
-                logger.error(f"{task_name} generated an exception: {exc}")
-    har_scores = scores["har_scores"]
-    ar_scores = scores["ar_scores"]
-    ad_link_scores = scores["ad_scores"]
-    td_scores = scores["td_scores"]
-    ranked_results = combine_scores(har_scores, ar_scores, ad_link_scores,
-                                    td_scores)
-    ranked_ids = [content.get("id", None) for content in ranked_results]
-    result = {"ranked_ids": ranked_ids}
-    return RankingResponse(**result)
+        scores = {}
+        with ThreadPoolExecutor() as executor:
+            future_to_task = {
+                executor.submit(execute_task, *args): name
+                for name, args in tasks.items()
+            }
+            for future in as_completed(future_to_task):
+                task_name = future_to_task[future]
+                try:
+                    scores[task_name] = future.result()
+                except Exception as exc:
+                    logger.error(f"{task_name} generated an exception: {exc}")
+
+        ranked_results = combine_scores(
+            har_scores=scores["har_scores"],
+            ar_scores=scores["ar_scores"],
+            ad_link_scores=scores["ad_scores"],
+            td_scores=scores["td_scores"],
+        )
+        ranked_ids = [content.get("id", None) for content in ranked_results]
+        result = {"ranked_ids": ranked_ids}
+        return RankingResponse(**result)
+    except Exception as e:
+        logger.error(f"Failed to rank posts: {e}")
+        return RankingResponse(ranked_ids=[])
 
 
 # if __name__ == "__main__":
