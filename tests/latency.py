@@ -64,8 +64,6 @@ if __name__ == "__main__":
 
     url = "http://127.0.0.1:5001"
 
-    
-
     result_dir = f"{os.path.dirname(__file__)}/results"
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
@@ -74,7 +72,8 @@ if __name__ == "__main__":
         results_df = pd.DataFrame(columns=["Platform", "Latency", "Num_Items"])
         # Step 2: Loop through each file and process it
         for idx, file_path in enumerate(json_files):
-            print("idx", idx)
+            if idx%10==0:
+                print(f"{idx} requests proceeded")
             fname = os.path.basename(file_path).replace(".json", "")
             with open(file_path, "r") as file:
                 # Step 3: Parse the JSON content
@@ -91,4 +90,4 @@ if __name__ == "__main__":
             # latencies[platform].append(latency)
 
         p95 = get_p95_latency(results_df)
-        print(f"\nLatency p95 for {platform} was {p95:.3f} seconds.")
+        print(f"Latency p95 for {platform} is {p95:.3f} seconds. \n")

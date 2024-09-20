@@ -188,7 +188,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         ranked_results = combine_scores(
             har_scores=scores["har_scores"],
             ar_scores=scores["ar_scores"],
-            ad_link_scores=scores["ad_scores"],
+            ad_scores=scores["ad_scores"],
             td_scores=scores["td_scores"],
         )
         ranked_ids = [content.get("id", None) for content in ranked_results]
