@@ -134,7 +134,7 @@ def rank(ranking_request: RankingRequest) -> RankingResponse:
         redis_client_obj[ranking_request.session.user_id] = (
             ranking_request.survey.ideology
         )
-    platform = ranking_request.session.platform
+    platform = ranking_request.session.platform.lower()
     post_items = ranking_request.items
     post_data = [
         {
