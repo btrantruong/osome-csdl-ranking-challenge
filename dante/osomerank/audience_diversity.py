@@ -92,17 +92,18 @@ def load_ad_data():
         )
     config = getconfig()
     cache_path = getcachedir()
-    fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file")
+    fn = config.get("AUDIENCE_DIVERSITY", "audience_diversity_file", fallback=None)
     path = os.path.join(cache_path, fn)
     COLS = ["n_visitors", "private_domain", "visitor_var"]
-    try:
-        if not os.path.exists(path):
-            logger.warning("No cached data found! Retrieving from S3.")
-            prefix = os.path.dirname(fn)
-            fetchfroms3(prefix, cache_path)
 
-        _DF = pd.read_csv(path, usecols=COLS)
-        logger.info(f"Loaded: {path}")
+    if not os.path.exists(path):
+        logger.warning("No cached data found! Retrieving from S3.")
+        prefix = os.path.dirname(fn)
+        fetchfroms3(prefix, cache_path)
+
+    _DF = pd.read_csv(path, usecols=COLS)
+    logger.info(f"Loaded: {path}")
+    try:
         # XXX: B: can we solve this?
         # TODO: Need to remove domains which are platform corref from NewsGuard data
         _DF = _DF.query("n_visitors >= 10")
@@ -137,9 +138,6 @@ def load_ad_data():
                 visitor_var_quantile.append(0)
         _DF["visitor_var"] = visitor_var_quantile
         _PAT = _list_to_pattern(*_DF.index)
-    except (configparser.NoSectionError, OSError) as e:
-        logger.error(f"Failed to load audience diversity data or prediction model. {e}")
-        raise
     except ValueError as e:
         logger.error(f"Failed to bin visitor data into quantiles. {e}")
         raise
@@ -190,8 +188,7 @@ def ad_prediction(feed_posts, platform=None, default=-1000):
     #The following code is for domain unshortening
     if urls_available:
         # XXX need redis connection string here
-        urls_available_unshortened = unshorten(*urls_available,
-                                               cache_redis=False)
+        urls_available_unshortened = unshorten(*urls_available, cache_redis=False)
     else:
         urls_available_unshortened = []
     """

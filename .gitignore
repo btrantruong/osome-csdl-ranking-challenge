@@ -196,6 +196,5 @@ debug/
 # Configuration files
 *.ini
 
-!docker-compose.dev.yml
 tests/
 !tests/*.yml

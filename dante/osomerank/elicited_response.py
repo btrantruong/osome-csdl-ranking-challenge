@@ -15,6 +15,7 @@ __all__ = [
 
 # Standard library imports
 import os
+import configparser
 from collections import defaultdict
 import torch 
 # External dependencies imports
@@ -27,7 +28,6 @@ from transformers import (
 # Package imports
 from ..utils import getcachedir, getconfig, get_logger, fetchfroms3
 
-config = getconfig()
 
 MODELS = defaultdict()
 TOKENIZERS = defaultdict()

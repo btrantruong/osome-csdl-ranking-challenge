@@ -35,32 +35,31 @@ def load_td_data():
             "Reloading from scratch."
         )
     # Attempt to load the BERTopic model
-    try:
-        config = getconfig()
-        cache_path = getcachedir()
-        prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir")
-        cached_model_dir = os.path.join(cache_path, prefix)
-        if not os.path.exists(cached_model_dir):
-            logger.warning("No cached model found! Retrieving from S3.")
-            fetchfroms3(prefix, cache_path)
 
+    config = getconfig()
+    cache_path = getcachedir()
+    prefix = config.get("TOPIC_DIVERSITY", "topic_diversity_dir", fallback=None)
+    cached_model_dir = os.path.join(cache_path, prefix)
+    if not os.path.exists(cached_model_dir):
+        logger.warning("No cached model found! Retrieving from S3.")
+        fetchfroms3(prefix, cache_path)
+    try:
         # XXX: do not calculate probabilities?
         TD_MODEL = BERTopic.load(cached_model_dir)
         logger.info(f"Loaded BERTopic model from: {cached_model_dir}")
 
-        json_fn = config.get("AUDIENCE_DIVERSITY", "topic_diversity_json")
-        cached_json_path = os.path.join(cache_path, json_fn)
-        with open(cached_json_path) as ff:
-            TD_DATA = json.load(ff)
-
-    except (configparser.NoSectionError, OSError) as e:
-        logger.error(
-            f"Failed to load BERTopic model or topic diversity data from {cached_json_path}: {e}"
+        json_fn = config.get(
+            "AUDIENCE_DIVERSITY", "topic_diversity_json", fallback=None
         )
-        raise
+
     except Exception as e:
-        logger.error(f"Unexpected error in {__name__}.{load_td_data.__name__}(): {e}")
-        raise
+        logger.error(
+            f"Unexpected error while loading BERTopic model in {__name__}.{load_td_data.__name__}(): {e}"
+        )
+
+    cached_json_path = os.path.join(cache_path, json_fn)
+    with open(cached_json_path) as ff:
+        TD_DATA = json.load(ff)
 
     TD_MEAN = np.mean([TD_DATA[k] for k in TD_DATA])
     TD_STD = np.std([TD_DATA[k] for k in TD_DATA])

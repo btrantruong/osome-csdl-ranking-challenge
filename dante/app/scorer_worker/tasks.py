@@ -71,9 +71,9 @@ logger = get_logger(__name__)
 c = getconfig()
 
 # hard time limit
-KILL_DEADLINE_SECONDS = int(c.get("SCORER", "KILL_DEADLINE_SECONDS"))
+KILL_DEADLINE_SECONDS = c.getint("SCORER", "KILL_DEADLINE_SECONDS")
 # soft time limit
-TIME_LIMIT_SECONDS = int(c.get("SCORER", "TIME_LIMIT_SECONDS"))
+TIME_LIMIT_SECONDS = c.getint("SCORER", "TIME_LIMIT_SECONDS")
 
 
 class SentimentScoreInput(BaseModel):
