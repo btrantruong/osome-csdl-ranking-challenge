@@ -1,7 +1,16 @@
 # Dante (diverse-audiences-non-toxic-engagements) -- a prosocial algorithm
-A submission to the Prosocial Ranking Challenge
 
-**Note** — the main project files for each of the components are located in `app`. This directory structure is a relic of starting from the template code which we can fix at some point.
+## Description 
+Our instantiation of “bridging” algorithm ([Ovadya & Thorburn, 2022](https://knightcolumbia.org/content/bridging-systems)) prioritizes posts that evoke civil discussions while appealing to an ideologically diverse audience. Except for toxic posts, content is ranked based on 2 criteria: 1) elicited response and 2) diverse engagement. 
+
+1. Two different models are used to infer the potential responses : one assessing the intensity of Affective Response (AR) to a post, such as happiness or sadness, and another assessing whether a post attracts Harmful Response (HaR), such as toxicity or offensiveness. These models are trained using the emotional content and toxicity levels of responses, predicted using state-of-the-art pre-trained language models, as variables. Note that a post can simultaneously evoke positive emotions and toxic reactions; therefore, the AR and HaR are treated as separate dimensions in our analysis.
+2. Diverse engagement is measured through a metric called "audience diversity” (AD). It estimates the range of ideological slants of the audience engaging with the content ([Bhadani et al., 2022](https://arxiv.org/abs/2007.08078)). If a post includes a URL, we assess its "source level" diversity by examining the ideological range of the domain's typical audience, which will be pre-calculated using a similar approach as described in Bhadani et al., 2022. Additionally, regardless of whether a post contains a URL, we determine the “topic level” diversity using the textual content.
+
+Our algorithm first removes highly toxic posts, then reranks the rest as follows: Non-HaR posts with high AD scores are prioritized, while all HaR posts are demoted. Where there are ties, posts are ordered by their AR scores to enhance engagement.
+
+**Note** 
+- this was a submission to the [Prosocial Ranking Challenge](https://humancompatible.ai/news/2024/01/18/the-prosocial-ranking-challenge-60000-in-prizes-for-better-social-media-algorithms/)
+— the main project files for each of the components are located in `app`. This directory structure is a relic of starting from the template code which we can fix at some point.
 
 **Helpful Docs** — [Poetry](https://python-poetry.org/docs/basic-usage/),  [Celery](https://docs.celeryq.dev/en/stable/), [Redis](https://redis.io/docs/latest/commands/json.get/), [JSONPath](https://github.com/json-path/JsonPath)
 
